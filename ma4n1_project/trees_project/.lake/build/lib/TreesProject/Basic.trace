@@ -1,5 +1,0 @@
-{"log":
- [{"message":
-   ".> LEAN_PATH=.\\.\\.lake/packages\\batteries\\.lake\\build\\lib;.\\.\\.lake/packages\\Qq\\.lake\\build\\lib;.\\.\\.lake/packages\\aesop\\.lake\\build\\lib;.\\.\\.lake/packages\\proofwidgets\\.lake\\build\\lib;.\\.\\.lake/packages\\Cli\\.lake\\build\\lib;.\\.\\.lake/packages\\importGraph\\.lake\\build\\lib;.\\.\\.lake/packages\\LeanSearchClient\\.lake\\build\\lib;.\\.\\.lake/packages\\plausible\\.lake\\build\\lib;.\\.\\.lake/packages\\mathlib\\.lake\\build\\lib;.\\.\\.lake\\build\\lib PATH c:\\Users\\ellio\\.elan\\toolchains\\leanprover--lean4---v4.14.0-rc2\\bin\\lean.exe -Dpp.unicode.fun=true -DautoImplicit=false .\\.\\.\\.\\TreesProject\\Basic.lean -R .\\.\\.\\. -o .\\.\\.lake\\build\\lib\\TreesProject\\Basic.olean -i .\\.\\.lake\\build\\lib\\TreesProject\\Basic.ilean -c .\\.\\.lake\\build\\ir\\TreesProject\\Basic.c --json",
-   "level": "trace"}],
- "depHash": "4257103721220196416"}
