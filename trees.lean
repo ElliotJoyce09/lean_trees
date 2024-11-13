@@ -18,6 +18,10 @@ def putEdgeInSet {V : Type} (x : Sym2 V) : Set (Sym2 V) := -- places the given e
 def graphWithEdgeRemoved {V : Type} (G : SimpleGraph V) (v : V) (p : G.Walk v v) (h : p.IsCycle) : SimpleGraph V := -- Creates a subgraph of G without the first edge in a walk from v to v, v ∈ V(G)
   G.deleteEdges (putEdgeInSet ( firstEdgeInWalk G v p ) ) -- NOTE TO DELETE LATER: this is a subgraph of G but I have just made it as a simple graph (if this is a problem later, try changing this)
 
+structure FiniteSimpleGraph (V : Type u) extends SimpleGraph V where
+  finiteVertSet : Finite V
+  finiteEdgeSet : Finset edgeSet
+
 def Cycle {V: Type} (G: SimpleGraph V) : Prop := -- This is in SimpleGraph.Path, so are some others, do we want to strip back what we are using or just use the premade ones?
   -- should take a vertex in V and check if there is a path which starts
   -- from that vertex and end at that vertex
