@@ -1,0 +1,15 @@
+name = "ma4n1_trees_project"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["Ma4n1TreesProject"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+autoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+
+[[lean_lib]]
+name = "Ma4n1TreesProject"
