@@ -24,5 +24,26 @@ def hasACycle {V : Type} (G : SimpleGraph V) : Prop :=
 def isAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
   ¬ hasACycle G
 
-def Tree {V: Type} (G : SimpleGraph V) : Prop :=
-  G.Connected ∧ isAcyclic G
+def nonEdgeSet {V : Type} (G : SimpleGraph V) :=
+  (completeGraph V).edgeSet \ G.edgeSet
+
+theorem minusEmptyGraph {V : Type} : nonEdgeSet (emptyGraph V) = (completeGraph V).edgeSet := by
+  simp [nonEdgeSet]
+
+def addEdgeToGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
+{ Adj := fun (x y) => G.Adj x y ∨ (x ∈ e ∧ y ∈ e ∧ x ≠ y),
+  symm := by
+    intros x y h
+    cases' h with hp hq
+    left
+    apply G.adj_symm
+    assumption
+    right
+    cases' hq with hqp hqq
+    cases' hqq with hqqp hqqq
+    -- angle brackets are for construction conjunctions
+    exact ⟨hqqp, hqp, hqqq.symm⟩
+}
+
+--def Tree {V: Type} (G : SimpleGraph V) : Prop :=
+  --G.Connected ∧ isAcyclic G
