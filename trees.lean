@@ -18,7 +18,7 @@ def putEdgeInSet {V : Type} (x : Sym2 V) : Set (Sym2 V) := -- places the given e
 def graphWithEdgeRemoved {V : Type} (G : SimpleGraph V) (v : V) (p : G.Walk v v) (h : p.IsCycle) : SimpleGraph V := -- Creates a subgraph of G without the first edge in a walk from v to v, v ∈ V(G)
   G.deleteEdges (putEdgeInSet ( firstEdgeInWalk G v p ) ) -- NOTE TO DELETE LATER: this is a subgraph of G but I have just made it as a simple graph (if this is a problem later, try changing this)
 
-structure FiniteSimpleGraph (V : Type u) extends SimpleGraph V where
+structure FiniteSimpleGraph (V : Type u) extends SimpleGraph V where -- wait nevermind this is wrong
   finiteVertSet : Finite V
   finiteEdgeSet : Finset edgeSet
 
