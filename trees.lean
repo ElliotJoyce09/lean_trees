@@ -31,6 +31,71 @@ def Tree {V: Type} (G: SimpleGraph V) : Prop :=
   -- should satisfy that G is Connected and Acyclic
 sorry
 
+
+-- This should work for any type that has exactly two distinct elements. that is what "neq" and "h" are asserting
+-- The completeGraph is equivalent to the path graph on 2 vertices, the empty graph is just already defined in SimpleGraph.basic
+theorem addEdgeToEmptyGraphGivesPathGaphOnTwoVerticies {V : Type} (x y : V) (neq : x ≠ y) (h : ¬ (∃ z : V, z ≠ x ∧ z ≠ y)) 
+  : (completeGraph V).edgeSet = (emptyGraph V).edgeSet ∪ {s(x,y)} := by
+  have emptyEdgeSetIsEmptySet : (emptyGraph V).edgeSet = ∅ := by 
+    exact SimpleGraph.edgeSet_eq_empty.mpr rfl
+  rw [emptyEdgeSetIsEmptySet]
+  simp only [Set.union_singleton, insert_emptyc_eq]
+
+  have xyedgeInPathGraph : s(x,y) ∈ (completeGraph V).edgeSet := by
+    exact neq
+  have superset : (completeGraph V).edgeSet ⊇ {s(x,y)} := by
+    exact Set.singleton_subset_iff.mpr xyedgeInPathGraph
+  have subset : (completeGraph V).edgeSet ⊆ {s(x,y)} := by
+    by_contra not_subset
+    have other_edge_in_path : ∃ e ∈ (completeGraph V).edgeSet, e ≠ s(x,y) := by
+      simp_all
+    obtain ⟨edge, property⟩ := other_edge_in_path
+    obtain ⟨edge_val_1, edge_val_2⟩ := edge
+    have x_or_y_val_1 : edge_val_1 = x ∨ edge_val_1 = y := by
+      by_contra suppose_not
+      simp_all
+      obtain ⟨left, right⟩ := suppose_not
+      have is_y : edge_val_1 = y := by 
+        exact h edge_val_1 left
+      exact neq (h x fun a => right is_y)
+    have x_or_y_val_2 : edge_val_2 = x ∨ edge_val_2 = y := by
+      by_contra suppose_not
+      simp_all
+      obtain ⟨left, right⟩ := suppose_not
+      have is_y : edge_val_2 = y := by 
+        exact h edge_val_2 left
+      exact neq (h x fun a => right is_y)
+    simp_all
+    obtain ⟨left, right⟩ := property
+    obtain ⟨left_2, right⟩ := right
+    cases x_or_y_val_1 with
+    | inl h_1 =>
+      cases x_or_y_val_2 with
+      | inl h_2 =>
+        subst h_2 h_1
+        simp_all only [not_true_eq_false]
+      | inr h_3 =>
+        subst h_3 h_1
+        simp_all only [not_false_eq_true, not_true_eq_false, imp_false]
+    | inr h_2 =>
+      cases x_or_y_val_2 with
+      | inl h_1 =>
+        subst h_2 h_1
+        simp_all only [not_false_eq_true, not_true_eq_false, false_implies, imp_false]
+      | inr h_3 =>
+        subst h_3 h_2
+        simp_all only [not_false_eq_true, not_true_eq_false]
+  have equal : (completeGraph V).edgeSet = {s(x,y)} := by
+    exact Eq.symm (Set.Subset.antisymm superset subset)
+  exact equal
+
+
+
+
+
+
+
+
 -- Got rid of the finite simple graph as that doesn't work. What I believe functions as a finite graph is by writing {V : Type} (Vfinite : Fintype V) (G : SimpleGraph V) (finsetEdgeset : Finset G.edgeSet) as part of the given lemma's hypothesis. Cardinality can then be accessed with finsetEdgeset.card & Vfinite.card
 -- This is my current proof of the of (1,2,3,4) -> (5), which is complete for the base case. This base case proof is however, is contingent on a reuse of the inductive hypothesis (Size of vertex set is 1), which I do not know how to restate
 lemma twoElemsInSetMeansCardGTOne {V : Type} (VFinset : Finset V) (x y : VFinset) (h: x ≠ y)
