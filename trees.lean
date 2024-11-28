@@ -31,6 +31,13 @@ def Tree {V: Type} (G: SimpleGraph V) : Prop :=
   -- should satisfy that G is Connected and Acyclic
 sorry
 
+def MinimallyConnected {V : Type} (G : SimpleGraph V) : Prop :=
+  -- removing any edge disconnects the graph
+  sorry
+
+def ConnectedComponent {V : Type} (U : Set V) (G : SimpleGraph U) : Prop :=
+  -- U is connected
+  sorry
 
 -- This should work for any type that has exactly two distinct elements. that is what "neq" and "h" are asserting
 -- The completeGraph is equivalent to the path graph on 2 vertices, the empty graph is just already defined in SimpleGraph.basic
