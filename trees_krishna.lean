@@ -50,6 +50,8 @@ def addEdgeToGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :
     exact ⟨hqqp, hqp, hqqq.symm⟩
 }
 
+-- ----------------------------------------------------------------------------------------------------------------------
+
 def Tree {V: Type} (G: SimpleGraph V) : Prop :=
   -- should satisfy that G is Connected and Acyclic
   G.Connected ∧ isAcyclic G
@@ -67,9 +69,25 @@ theorem Disconnected_implies_connected_components {V : Type} (G : SimpleGraph V)
   -- so G is disconnected
   sorry
 
-def MinimallyConnected {V : Type} (G : SimpleGraph V) (H : G.Subgraph): Prop :=
+def RemoveEdgeFromGraph {V:Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
+{ Adj := fun (x y) => G.Adj x y ∨ (x ∉ e ∧ y ∉ e ∧ x ≠ y),
+  symm := by
+    intros x y h
+    cases' h with hp hq
+    left
+    apply G.adj_symm
+    assumption
+    right
+    cases' hq with hqp hqq
+    cases' hqq with hqqp hqqq
+    -- angle brackets are for construction conjunctions
+    exact ⟨hqqp, hqp, hqqq.symm⟩
+
+}
+
+def MinimallyConnected {V : Type} (G : SimpleGraph V): Prop :=
   -- removing any edge disconnects the graph
-  (¬ H.coe.Connected)∧(H ≠ G)
+  ∀ e ∈ G.edgeSet, (RemoveEdgeFromGraph G e).Connected
 
 def ConnectedComponent {V : Type} (U : Set V) (G : SimpleGraph U) : Prop :=
   G.Connected
