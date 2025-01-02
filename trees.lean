@@ -1,25 +1,11 @@
-import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Combinatorics.SimpleGraph.Basic
+import Mathlib.Combinatorics.SimpleGraph.Path
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Tactic -- Don't think is needed need???? but curtrently used for interval_cases
+import Mathlib.Combinatorics.SimpleGraph.Subgraph
+import Mathlib.Data.Fintype.Basic
 
 namespace trees
-
-def hasACycle {V : Type} (G : SimpleGraph V) : Prop :=
-  ∃ (u : V), ∃ (p : G.Walk u u), p.IsCycle
-
-def isAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
-  ¬ hasACycle G
-
-def isTree {V : Type} (G : SimpleGraph V) : Prop :=
-  G.Connected ∧ isAcyclic G
-
-def isCycleAtV {V : Type} (G : SimpleGraph V) (v : V) : Prop := -- if there exists a cycle in G starting at v, then this is true
-  ∃ (p : G.Walk v v), p.IsCycle
-
-def secondVertexInWalk {V : Type} (G : SimpleGraph V) {v u : V} (p : G.Walk v u)  : V := -- returns the first vertex along a given walk from v to u in a graph G
-  p.getVert 1
-
-def putEdgeInSet {V : Type} (x : Sym2 V) : Set (Sym2 V) := -- places the given edge (as a Sym2 V) into a set on its own
-  {x}
 
 -- I did this for elliot:
 -- This should work for any type that has exactly two distinct elements. that is what "neq" and "h" are asserting
@@ -79,12 +65,33 @@ theorem addEdgeToEmptyGraphGivesPathGaphOnTwoVerticies {V : Type} (x y : V) (neq
     exact Eq.symm (Set.Subset.antisymm superset subset)
   exact equal
 
--- This is a stand in for the action proof
+/-- A proposition that holds if there exists an element of type V such that there is a cycle containing this element in the given graph G-/
+def hasACycle {V : Type} (G : SimpleGraph V) : Prop :=
+  ∃ (u : V), ∃ (p : G.Walk u u), p.IsCycle
+
+/-- A proposition that holds if there does not exist any cycles in the given graph G. Essentially the converse of hasACycle.-/
+def isAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
+  ¬ hasACycle G
+
+/-- This is true if the graph is a tree. It requires it to be connected and have no cycles.-/
+def isTree {V : Type} (G : SimpleGraph V) : Prop :=
+  G.Connected ∧ isAcyclic G
+
+/-- Returns the first vertex along a given walk from v to u in a graph G-/
+def secondVertexInWalk {V : Type} (G : SimpleGraph V) {v u : V} (p : G.Walk v u) : V :=
+  p.getVert 1
+
+/-- A trivial function that takes an element of some Type V and returns a Set of Type V containing only that element-/
+def putElemInSet {V : Type} (u : V) : Set V :=
+  {u}
+
+/-- This is a stand in for the actual proof, which is not assigned to me-/
 lemma three_implies_G_without_e_disconnected {V : Type} [Finite V] (G : SimpleGraph V) (e : Sym2 V)
- : ¬(G.deleteEdges (putEdgeInSet (e))).Connected  := by
+ : ¬(G.deleteEdges (putElemInSet (e))).Connected  := by
   sorry
 
-lemma twoElemsInSetMeansCardGTOne {V : Type} [Finite V] (G : SimpleGraph V) (x y : V) (h : x ≠ y) (h_x : x ∈ (Fintype.ofFinite V).elems) (h_y : y ∈ (Fintype.ofFinite V).elems)
+/-- A proof that if two elements are in the element set of a Fintype and they are not equal, then the cardinality of that fintype must be more than one -/
+lemma twoElemsInSetMeansCardGTOne {V : Type} [Finite V] (x y : V) (h : x ≠ y) (h_x : x ∈ (Fintype.ofFinite V).elems) (h_y : y ∈ (Fintype.ofFinite V).elems)
   : (Fintype.ofFinite V).card > 1 := by
   by_contra h1 -- suppose |V (G)| is not less than one
 
@@ -106,59 +113,64 @@ lemma twoElemsInSetMeansCardGTOne {V : Type} [Finite V] (G : SimpleGraph V) (x y
     obtain ⟨w, h1⟩ := cardinality_V -- we split the relation we have acquired from the cardinality of V(G) into the element and the defintion of (Fintype.ofFinite V).elems
     simp_all only [Finset.mem_singleton, not_true_eq_false] -- as x and y are both in this set, which we have shown has only one element, we get a contradiction, and the proof is done.
 
-/--A proof that if x - 1 = 0 for some x, and x is not 0, then x = 1-/
+/-- A proof that if x - 1 = 0 for some x, and x is not 0, then x = 1 -/
 lemma nat_minus_one_eq_zero_implies_eq_one {x : ℕ} (h : x - 1 = 0) (neq: x ≠ 0) : x = 1 := by
-  have gt_0 : x > 0 := by
+  have gt_0 : x > 0 := by -- All natural numbers are ≥ 0, and as x is not zero, it must be > 0
     exact Nat.zero_lt_of_ne_zero neq
-  have one_gt_0 : 1 > 0 := by
+  have one_gt_0 : 1 > 0 := by -- Clearly true
     exact Nat.one_pos
-  exact Eq.symm (Nat.sub_one_cancel one_gt_0 gt_0 (id (Eq.symm h)))
+  exact Eq.symm (Nat.sub_one_cancel one_gt_0 gt_0 (id (Eq.symm h)))  -- h is the same as x - 1 = 0 - 1 and the previous results close the goal using this prexisting lemma
 
-lemma oneVertexbutEdgeIsFalse {V : Type} [v_is_finite : Finite V] (G : SimpleGraph V) (e : Sym2 V) (h : e ∈ G.edgeSet) (h1 : (Fintype.ofFinite V).card = 1)
-  : False := by
+/-- A proof that if there is an edge in a graph, but the vertex set has cardinality one, then there is a contradiction-/
+lemma oneVertexbutEdgeIsFalse {V : Type} [Finite V] (G : SimpleGraph V) (e : Sym2 V)
+  (h : e ∈ G.edgeSet) (h1 : (Fintype.ofFinite V).card = 1) : False := by
   obtain ⟨x, y⟩ := e -- we split our edge into each its end points
   let h2 := (x = y)
   by_cases h2 -- These points are either equal to eachother, or different
   -- If x = y
   · rename_i h2_holds
     simp_all only [h2]
-    subst h2_holds
     simp_all only [SimpleGraph.mem_edgeSet, SimpleGraph.irrefl] -- we then get an edge from a vertex to itself, a contradition to the irreflexivity property of simple graphs
 
-  -- If x ≠ y
   · rename_i h2_not_holds
+  -- If x ≠ y
     simp_all only [SimpleGraph.mem_edgeSet, h2]
+
     -- we prove x and y are both in (Fintype.ofFinite V).elems, which is clearly true
-    have h_x : (x ∈ (Fintype.ofFinite V).elems) := by
+    have h_x : x ∈ (Fintype.ofFinite V).elems := by
       exact (Fintype.ofFinite V).complete x
 
-    have h_y : (y ∈ (Fintype.ofFinite V).elems) := by
+    have h_y : y ∈ (Fintype.ofFinite V).elems := by
       exact (Fintype.ofFinite V).complete y
 
-    have h3 : ((Fintype.ofFinite V).card > 1) := by
-      apply twoElemsInSetMeansCardGTOne G x y h2_not_holds h_x h_y -- this is a proof of our h3
+    have h3 : (Fintype.ofFinite V).card > 1 := by -- We then see the cardinality of Vis greater than one by another lemma
+      apply twoElemsInSetMeansCardGTOne x y h2_not_holds h_x h_y
 
     simp_all only [gt_iff_lt, lt_self_iff_false] -- h1 & h3 contradict eachother, so we have accquired the desired result
 
+/-- A function taking the set of vertices in a connected component of a graph G and forms a subgraph containing all edges in G between the vertices in the conncected component-/
 def connectedComponentToSubGraph {V : Type} [Finite V] (G : SimpleGraph V) (connComponent : Set V): G.Subgraph :=
-  { verts := connComponent
+  { verts := connComponent -- The vertex set is the set of vertices in the component
     Adj := fun (x y) => G.Adj x y ∧ (x ∈ connComponent) ∧ (y ∈ connComponent)
-    adj_sub := by
+    -- Two vertices are adjacent if they are both in the conncected component and adjacent in G
+    adj_sub := by -- As adjacency in G is a requirement for adjacency in the subgraph, this follows naturally
       intro v w a
       simp_all only
-    edge_vert := by
+    edge_vert := by -- This also follows naturally by similar logic
       intro v w a
       simp_all only
-    symm := by
+    symm := by -- Symmetricness follows from G.Adj being symmetric
       intro v w properties
       simp_all only [and_self, and_true]
       obtain ⟨GAdj, properties⟩ := properties
       exact id (SimpleGraph.adj_symm G GAdj)
   }
 
-lemma edgeConversionG'CoeToG {V : Type} {G : SimpleGraph V} (G' : G.Subgraph) (x y : ↑G'.verts) (h : G'.coe.Adj ↑x y) : G.Adj x y := by
-  simp_all only [SimpleGraph.Subgraph.coe_adj, SimpleGraph.Subgraph.coe_adj_sub]
+/-- A proof that if two vertices are adjacent in the coerced graph if a subgraph of a graph G, they are adjacent in G -/
+lemma edgeConversionG'CoeToG {V : Type} {G : SimpleGraph V} (G' : G.Subgraph) (x y : ↑G'.verts) (h : G'.coe.Adj x y) : G.Adj x y := by
+  simp_all only [SimpleGraph.Subgraph.coe_adj, SimpleGraph.Subgraph.coe_adj_sub] -- Follows from application of some results that already exist for Subgraph.coe
 
+/-- A function that takes a sink vertex of G' and an element of V and maps them to either the sink vertex if v is not in the vert. set of G' or to itself if it is -/
 def map_to_membership_or_sink {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (sink : ↑G'.verts) (v : V) : G'.verts := by
   let h := v ∈ G'.verts
   by_cases h
@@ -167,51 +179,65 @@ def map_to_membership_or_sink {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (
     exact ⟨v, h_1⟩
   · exact sink
 
+/-- A homomorphism from the spanning coe of a subgraph of G to the coe of the same subgraph -/
 def spanningCoeToCoeHom {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (sink : ↑G'.verts): G'.spanningCoe →g G'.coe  where
-  toFun := fun v => map_to_membership_or_sink sink v
+  toFun := fun v => map_to_membership_or_sink sink v -- Maps v to the corresponding element of G'.verts according to map_to_membership_or_sink
+  map_rel' := by -- This is a proof that adjacency holding in G'.spanningCoe means it holds for the mapped vertices in G'.coe
+    intro a b adj_in_spanning -- Let a and b be two elements of V adjacent in G'.spanningCoe.Adj
 
-  map_rel' := by
-    intro a b a_1
     simp_all only [SimpleGraph.Subgraph.spanningCoe_adj, SimpleGraph.Subgraph.coe_adj]
+    -- We see this is equivalent to 'if the original vertices are adjacent in G', then the mapped vertices are also adjacent in G'
+
     unfold map_to_membership_or_sink
     simp_all only
     obtain ⟨val, property⟩ := sink
-    split
+
+    split -- We see we have 4 different cases, based on which of a and b are in G'.verts
     next h =>
-      simp_all only
       split
-      next h_1 => simp_all only
-      next h_1 =>
+      next h_1 => -- If they are both in G'.verts
+        simp_all only -- Then adjacency follows as a and b both map to themselves
+
+      next h_1 => -- If a is in G'.verts and b is not
         simp_all only
-        have adj_implies_in_vert : b ∈ G'.verts := by exact G'.edge_vert (id (SimpleGraph.Subgraph.adj_symm G' a_1))
-        exact False.elim (h_1 adj_implies_in_vert)
+        /- Then we see b must be in G'.verts as b is adjacent to another vertex in G' (sink),
+        and adjacency implies vertex set membership by the edge_vert property of subgraphs -/
+        have adj_implies_in_vert : b ∈ G'.verts := by
+          exact G'.edge_vert (id (SimpleGraph.Subgraph.adj_symm G' adj_in_spanning))
+        exact False.elim (h_1 adj_implies_in_vert) -- This contradicts our assumption
+
     next h =>
-      simp_all only
       split
-      next h_1 =>
-        simp_all only
-        have adj_implies_in_vert : a ∈ G'.verts := by exact G'.edge_vert a_1
-        exact False.elim (h adj_implies_in_vert)
-      next h_1 =>
-        simp_all only
-        have adj_implies_in_vert : a ∈ G'.verts :=
-          by exact G'.edge_vert a_1
+      next h_1 => -- If b is in G'.verts and a is not
+        simp_all only -- We find a similar contradiction to above
+        have adj_implies_in_vert : a ∈ G'.verts := by
+          exact G'.edge_vert adj_in_spanning
         exact False.elim (h adj_implies_in_vert)
 
-lemma reachableByCompImpliesconnComp {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V} {G' : G.ConnectedComponent} {x : V} (h : G' = G.connectedComponentMk x) {y : V} (reachable : G.Reachable x y) : y ∈ G' := by
+      next h_1 =>-- If neither is in G'.verts
+        simp_all only -- We find a similar contradiction to above
+        have adj_implies_in_vert : a ∈ G'.verts :=
+          by exact G'.edge_vert adj_in_spanning
+        exact False.elim (h adj_implies_in_vert)
+
+/-- A proof that if a vertex is reachable from another vertex in a connected component, then the vertex must also be in the connected component-/
+lemma reachableByCompImpliesconnComp {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V} {G' : G.ConnectedComponent}
+                                     {x : V} (h : G' = G.connectedComponentMk x) {y : V} (reachable : G.Reachable x y) : y ∈ G' := by
   subst h
   have same_component : G.connectedComponentMk x = G.connectedComponentMk y := by
     exact SimpleGraph.ConnectedComponent.sound reachable
   exact id (Eq.symm same_component)
 
-lemma connected_component_coe_is_connected {V : Type} [Finite V] [Nonempty V] {G G_e_removed : SimpleGraph V} (x : V) {y : V} (h : s(x,y) ∈ G.edgeSet) (def_of_G_e : G_e_removed = G.deleteEdges (putEdgeInSet ( s(x,y) ) ) )
-  : (connectedComponentToSubGraph G (G_e_removed.connectedComponentMk x).supp).coe.Connected := by
+/-- A proof that the connected component of a graph with an edge removed is connected when turned into a subgraph with connectedComponentToSubGraph and then coerced -/
+lemma connected_component_coe_is_connected {V : Type} [Finite V] [Nonempty V] {G G_e_removed : SimpleGraph V} (x : V) {y : V} (h : s(x,y) ∈ G.edgeSet)
+  (def_of_G_e : G_e_removed = G.deleteEdges (putElemInSet ( s(x,y) ) ) ): (connectedComponentToSubGraph G (G_e_removed.connectedComponentMk x).supp).coe.Connected := by
 
-  let G'_connComponent := G_e_removed.connectedComponentMk x -- we recreate the variables in the goal so we can work our  way to the desired result
+  let G'_connComponent := G_e_removed.connectedComponentMk x -- we recreate the variables in the goal so we can work our way to the desired result
   let G'_verts := G'_connComponent.supp
   let G' := connectedComponentToSubGraph G G'_verts
 
-  have h1 : G'_connComponent = Quot.mk G_e_removed.Reachable x := by -- we state our defintion of G'_connComponent for below and some lemmas used later on
+  -- we state our defintion of G'_connComponent for below and some lemmas used later on
+  have h1 : G'_connComponent = Quot.mk G_e_removed.Reachable x := by
     exact rfl
   have isNonempty : Nonempty ↑G'.verts := by -- We require this property, as connected means vertex set (Nonempty ↑G'.verts) nonempty & preconnected
   --it follows from V being nonempty and h1 stating there is an element in the set (x)
@@ -323,7 +349,7 @@ lemma connected_component_coe_is_connected {V : Type} [Finite V] [Nonempty V] {G
             simp_all only [and_self] -- We see we have already fufilled each of the properties of the statement
 
           simp_all only [SimpleGraph.mem_edgeSet, Subtype.forall, SimpleGraph.Subgraph.mem_edgeSet, SimpleGraph.deleteEdges_adj, not_or, not_not, not_true_eq_false]
-          -- COMMENT THIS LATER
+          -- SIMP TO DO
 
         have a_to_1 : G_e_removed.Reachable a edge_val_1 := by -- We see there is a path from a to edge_val_1
 
@@ -376,80 +402,88 @@ lemma connected_component_coe_is_connected {V : Type} [Finite V] [Nonempty V] {G
       let a_G' : ↑G'.verts := ⟨a, a_mem⟩ -- Let use reconstruct the points we have claimed are not reachable in G'.coe (Though we shall prove they are)
       let b_G' : ↑G'.verts := ⟨b, b_mem⟩
 
-      have exists_walk : Nonempty (G'.coe.Walk a_G' b_G') := by -- might not even need thise
+      have exists_walk : Nonempty (G'.coe.Walk a_G' b_G') := by -- We see there exists a walk from a_G' to b_G'
 
-        have edge_map : ∀ e, e ∈ path_a_b.edges → e ∈ G'.edgeSet := by
+        have edge_map : ∀ e, e ∈ path_a_b.edges → e ∈ G'.edgeSet := by -- I claim all edges in path_a_b are in G'
           exact fun e a => all_edges_in_sub e a
+          -- We can create a map from edges in the path to edges in the edgeSet, so the relation holds
 
+        -- Thus we can transfer path_a_b to a path in G'.spanningCoe using the transfer function of Walks
         let p := SimpleGraph.Walk.transfer path_a_b G'.spanningCoe edge_map
 
+        -- Thus there exists a walk betwen a b in spanningCoe so reachability follows
         have reachable_in_spanning : G'.spanningCoe.Reachable a b := by
           exact SimpleGraph.Walk.reachable p
 
-        have reachable_in_coe : G'.coe.Reachable a_G' b_G' := by
+        have reachable_in_coe : G'.coe.Reachable a_G' b_G' := by -- I claim this means a_G' and b_G' are reachable in G'.coe
+
           let h := SimpleGraph.Reachable.map (spanningCoeToCoeHom a_G') reachable_in_spanning
+          /- Using spanningCoeToCoeHom we can map the reachability to the reachability images of a and b under the
+          function spanningCoeToCoeHom a_G' in the graph G'.coe -/
 
-          have hom_on_a : spanningCoeToCoeHom a_G' a = a_G' := by
+          have hom_on_a : spanningCoeToCoeHom a_G' a = a_G' := by -- I claim this image is a_G'
 
-            have eq : spanningCoeToCoeHom a_G' a = (map_to_membership_or_sink a_G' a) := by -- not right
+            have eq : spanningCoeToCoeHom a_G' a = (map_to_membership_or_sink a_G' a) := by -- We can replace the image with its exact value
+              exact rfl
+
+            unfold map_to_membership_or_sink at eq -- We see the result is a_G' if a ∈ G'.verts, otherwise it is a_G'
+
+            simp_all only [dite_eq_else] -- We see the goal is closed if a ∈ G'.verts
+            exact fun h => trivial -- This is trivial due to 'a_mem'
+
+          have hom_on_b : spanningCoeToCoeHom a_G' b = b_G' := by -- Similarly I claim this image is b_G', the proof is the same except the final step
+
+            have eq : spanningCoeToCoeHom a_G' b = (map_to_membership_or_sink a_G' b) := by
               exact rfl
 
             unfold map_to_membership_or_sink at eq
 
-            have eq1 : (map_to_membership_or_sink a_G' a) = a_G' := by
-              simp_all only
-              split at eq
-              next h_4 => exact eq
-              next h_4 => exact False.elim (h_4 a_mem)
-            exact eq1
+            simp_all only [dite_eq_else]
+            exact dif_pos b_mem -- This is trivial due to 'b_mem'
 
-          have hom_on_b : spanningCoeToCoeHom a_G' b = b_G' := by
+          rw [hom_on_a, hom_on_b] at h -- So we can rewrite the homomorphism results at h, turning it into our exact goal
+          exact h -- So we are done
 
-            have eq : spanningCoeToCoeHom a_G' b = (map_to_membership_or_sink a_G' b) := by -- not right
-              exact rfl
+        exact reachable_in_coe -- Reachable implies there exists a walk by defintion, so we are done
 
-            unfold map_to_membership_or_sink at eq
-
-            have eq1 : (map_to_membership_or_sink a_G' b) = b_G' := by
-              simp_all only
-              split at eq
-              next h_4 => exact eq
-              next h_4 => exact False.elim (h_4 b_mem)
-            exact eq1
-
-          rw [hom_on_a, hom_on_b] at h
-          exact h
-
-        exact reachable_in_coe
-
-      exact doesnt_hold exists_walk
+      exact doesnt_hold exists_walk -- So there exists a walk from a_G' b_G', but our assumption was that such a walk doesnt exist, so we have a contradiction
 
     exact not_preconnected fun u v => h3 u v (h2 u v)
   exact SimpleGraph.Connected.mk isPreconnected -- G'.coe has Nonempty edgeset, is preconnected, and is exactly our desired graph, so we are done
 
+/-- A homomophism from the coerced graph of a subgraph of a graph G to the graph G -/
 def subgraph_to_graph_hom {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} :  G'.coe →g G where
   toFun := fun
-    | .mk val property => val
+    | .mk val property => val -- Maps to the v values of the subgraph vertex
   map_rel' := by
-    exact fun {a b} a_1 => edgeConversionG'CoeToG G' a b a_1
+    exact fun {a b} a_1 => edgeConversionG'CoeToG G' a b a_1 -- Adjacency follows from another result
 
-lemma subgraph_hom_eq_implies_eq {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (x y : G'.verts) (h : subgraph_to_graph_hom x = subgraph_to_graph_hom y) : x = y := by
+/-- A proof that if subgraph_to_graph_hom is equal for two elements of a vertex set then the elements are equal -/
+/- It follows from how value is definined in the homomorphism -/
+lemma subgraph_hom_eq_implies_eq {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (x y : G'.verts)
+                                 (h : subgraph_to_graph_hom x = subgraph_to_graph_hom y) : x = y := by
   obtain ⟨val, property⟩ := x
   obtain ⟨val_1, property_1⟩ := y
   subst h
   simp_all only [Subtype.mk.injEq]
   rfl
 
-lemma subgraph_hom_inj  {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} : ∀ x y : G'.verts, subgraph_to_graph_hom x = subgraph_to_graph_hom y → x = y := by
+/-- A proof that subgraph_to_graph_hom is injective -/
+/- Simply applies the above -/
+lemma subgraph_hom_inj  {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} :
+                        ∀ x y : G'.verts, subgraph_to_graph_hom x = subgraph_to_graph_hom y → x = y := by
   exact fun x y a => subgraph_hom_eq_implies_eq x y a
 
+/-- Takes a walk in the coe and maps it to a walk in the parent graph using the above -/
 def Walk_map {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} {x y : G'.verts} (G'_walk : G'.coe.Walk x y) : G.Walk x y :=
   SimpleGraph.Walk.map subgraph_to_graph_hom G'_walk
 
+/-- A proof that the coerced graphs of connected components of a tree with one edge removed are acylic -/
 lemma conn_comp_acyclic {V : Type} [Finite V] [Nonempty V] {G G_e_removed : SimpleGraph V} (G_is_tree : isTree G)
-  {x y : V} (h : s(x,y) ∈ G.edgeSet) (def_of_G_e : G_e_removed = G.deleteEdges (putEdgeInSet ( s(x,y) ) ) )
+  {x y : V} (h : s(x,y) ∈ G.edgeSet) (def_of_G_e : G_e_removed = G.deleteEdges (putElemInSet ( s(x,y) ) ) )
   : isAcyclic (connectedComponentToSubGraph G (G_e_removed.connectedComponentMk x).supp).coe := by
-  have G_Acyclic : isAcyclic G := by
+
+  have G_Acyclic : isAcyclic G := by -- As G is a tree it is acylic (That is, isAcyclic holds for it)
     unfold isTree at G_is_tree
     obtain ⟨conn, acyc⟩ := G_is_tree
     exact acyc
@@ -457,27 +491,35 @@ lemma conn_comp_acyclic {V : Type} [Finite V] [Nonempty V] {G G_e_removed : Simp
   unfold isAcyclic
   unfold hasACycle
 
+  -- We see that our goal means means that for any x in (G_e_removed.connectedComponentMk x).supp, any walk from x to itself is not a cycle
   simp_all only [SimpleGraph.mem_edgeSet, Subtype.exists, not_exists]
-  intro cycle_vert cycle_vert_rel cycle
-  by_contra hasACycle
-  let G_walk := Walk_map cycle
 
-  have G_walk_is_Cycle : G_walk.IsCycle := by
-    rw [← SimpleGraph.Walk.map_isCycle_iff_of_injective subgraph_hom_inj] at hasACycle
-    exact hasACycle
+  -- let 'cycle_vert' be an element of (G_e_removed.connectedComponentMk x).supp (A property stored in 'cycle_vert_rel')
+  -- and 'cycle' be any cycle starting and ending at 'cycle_vert'. The goal then becomes to show cycles is not a cycle
+  intro cycle_vert cycle_vert_rel cycle
+
+  by_contra hasCycle -- Suppose, for contradiction it is a cycle
+  let G_walk := Walk_map cycle -- As we can map from the coe to the parent graph we can map this cycle to one in G
+
+  have G_walk_is_Cycle : G_walk.IsCycle := by -- This is also a cycles as we have shown this map is injective
+    rw [← SimpleGraph.Walk.map_isCycle_iff_of_injective subgraph_hom_inj] at hasCycle
+    exact hasCycle
 
   unfold isAcyclic at G_Acyclic
-  unfold hasACycle at G_Acyclic
+  unfold hasACycle at G_Acyclic -- We see that acyclicness of G means no walk in it from a vertex to itself can be a cycle
   simp [not_exists] at G_Acyclic
-  simp_all only
+  simp_all only -- G_walk contradicts this
 
-lemma my_card_congr {α β} (a : Fintype α) (b : Fintype β) (f : α ≃ β) : Fintype.card α = Fintype.card β := by -- an adaptation of Fintype.card_congr where the two fintypes are entered explicitly (rather than implicitly)
+/-- An adaptation of the built-in Fintype.card_congr where the two fintypes are entered explicitly (rather than implicitly)-/
+lemma my_card_congr {α β} (a : Fintype α) (b : Fintype β) (f : α ≃ β) : Fintype.card α = Fintype.card β := by
   rw [← Fintype.ofEquiv_card f]; congr!
 
-theorem my_set_fintype_card_eq_univ_iff (V : Fintype α) (s : Set α) [Fintype s] : -- same as above but for set_fintype_card_eq_univ_iff
+/-- An adaptation of the built-in fintype_card_eq_univ_iff where the set is entered as a set rather than a finset -/
+theorem my_set_fintype_card_eq_univ_iff (V : Fintype α) (s : Set α) [Fintype s] :
     Fintype.card s = Fintype.card α ↔ s = Set.univ := by
   rw [← Set.toFinset_card, Finset.card_eq_iff_eq_univ, ← Set.toFinset_univ, Set.toFinset_inj]
 
+/-- A proof that if a set of type V contains every element of the type, then they have the same cardinality (Under Fintype.ofFinite) -/
 lemma type_eq_set_iff_card_the_same {V : Type} [Finite V] (set : Set V) : (∀ v : V, v ∈ set) ↔ (Fintype.ofFinite set).card = (Fintype.ofFinite V).card := by
   apply Iff.intro
   · intro all_in_set -- →
@@ -489,10 +531,9 @@ lemma type_eq_set_iff_card_the_same {V : Type} [Finite V] (set : Set V) : (∀ v
     subst card_eq -- So want to show v is in its own universe
     exact trivial -- Trivially true
 
+/-- An adaptation of Fintype.card_congr' where the two fintypes are entered explicitly (rather than implicitly) -/
 theorem my_card_congr' {α β} (x : Fintype α) (y : Fintype β) (h : α = β) : x.card = y.card := by
   exact Fintype.card_congr' h
-
-def putElemInSet {V : Type} (u : V) : Set V := {u}-- trivial function needed to issues with {u} below
 
 /--A proof that removing an element from a set of type V, where V is finite, decreases the cardinlity of the set by 1-/
 lemma finset_removing_elem_decrease_card_by_one {V : Type} [Finite V] [DecidableEq V] (set : Set V) (w : set) [Fintype ↑set] : (set \ {↑w}).toFinset.card = set.toFinset.card - 1:= by
@@ -507,64 +548,76 @@ lemma finset_removing_elem_decrease_card_by_one {V : Type} [Finite V] [Decidable
   rw [Set.toFinset_singleton, Set.subset_toFinset, Finset.coe_singleton, Set.singleton_subset_iff]
   exact w.prop-- This is exactly one of the assumptions
 
-lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V] [Nonempty V]
+/-- A proof that if two sets of the same finite type have an empty intersection, then the sum of their cardinalities is exactly the cardinality of their union -/
+lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V]
   : ∀ a b : Set V, ∅ = a ∩ b → (Fintype.ofFinite a).card + (Fintype.ofFinite b).card  = (Fintype.ofFinite ↑(a ∪ b)).card := by
-  intro a b empty_inter
+  intro a b empty_inter -- Let 'a' and 'b' be sts of type V, and 'empty_inter' the asumption that '∅ = a ∩ b'
   let a_card := (Fintype.ofFinite a).card
   let b_card := (Fintype.ofFinite b).card
-  generalize hu : (Fintype.ofFinite ↑(a ∪ b)).card = u_card
 
-  induction u_card with -- equiv to starting at |V (G)| = 1
-  --We prove |E(G)| = |V (G)| − 1 by induction on n = |V (G)|.
-  | zero     =>
+  generalize hu : (Fintype.ofFinite ↑(a ∪ b)).card = u_card -- We induct on the cardinality of a ∪ b
+  induction u_card with
+  | zero     => -- If |a ∪ b| = 0
   rw [(Fintype.ofFinite ↑(a ∪ b)).card_eq_zero_iff] at hu
-  have a_card_eq_zero : a_card = 0 := by
+
+  have a_card_eq_zero : a_card = 0 := by -- I claim this means the cardinality of a is zero
+
     have a_empty : IsEmpty a := by
-      simp_all only [isEmpty_subtype]
-      simp [Set.mem_union] at hu
-      intro x
-      simp_all only [not_false_eq_true]
-    rw [← (Fintype.ofFinite a).card_eq_zero_iff] at a_empty
-    exact a_empty
-  have b_card_eq_zero : b_card = 0 := by
+      simp_all only [isEmpty_subtype] -- We see that our goal is so show no element of v is in a
+      simp [Set.mem_union] at hu -- We see that the union being empty means that every element of V is not in a and not in b
+      intro x -- Let x be an element of v, our goal is now to show it is not in a
+      simp_all only [not_false_eq_true] -- This is part of the result 'hu' gives, so we are done
+
+    rw [← (Fintype.ofFinite a).card_eq_zero_iff] at a_empty -- Being empty implies the cardinality is zero
+    exact a_empty -- So we are done
+
+  have b_card_eq_zero : b_card = 0 := by -- We see the cardinality of b is also zero by the same proof
+
     have b_empty : IsEmpty b := by
       simp_all only [isEmpty_subtype]
       simp [Set.mem_union] at hu
       intro x
       simp_all only [not_false_eq_true]
+
     rw [← (Fintype.ofFinite b).card_eq_zero_iff] at b_empty
     exact b_empty
-  exact Linarith.eq_of_eq_of_eq a_card_eq_zero b_card_eq_zero
-  | succ y hy =>
 
-  have nonempty_union : Nonempty ↑(a ∪ b) := by
-    have card_gt_0 : 0 < (Fintype.ofFinite ↑(a ∪ b)).card := by
+  exact Linarith.eq_of_eq_of_eq a_card_eq_zero b_card_eq_zero -- So as both cardinalities in the goal are zero, clearly their sum is also zero
+
+
+  | succ y hy => -- If |a ∪ b| = y + 1 and |a ∪ b| = y implies |a| + |b| = y = y
+  have nonempty_union : Nonempty ↑(a ∪ b) := by -- First we see a ∪ b is nonempty
+    have card_gt_0 : 0 < (Fintype.ofFinite ↑(a ∪ b)).card := by -- It is greater than zero as + 1 to any ℕ is greater than zero
       exact Nat.lt_of_sub_eq_succ hu
-    rw [(Fintype.ofFinite ↑(a ∪ b)).card_pos_iff] at card_gt_0
+    rw [(Fintype.ofFinite ↑(a ∪ b)).card_pos_iff] at card_gt_0 -- And positive cardinality implies nonempty
     exact card_gt_0
+
   rw [nonempty_subtype] at nonempty_union -- As nonempty, there must be at least one element in the union
-  obtain ⟨u, u_prop⟩ := nonempty_union -- obtain this  element and its relation
+  obtain ⟨u, u_prop⟩ := nonempty_union -- obtain this element and its relation (u ∈ a ∪ b)
   rw [Set.mem_union] at u_prop
-  have only_in_one : (u ∈ a ∧ u ∉ b) ∨ ((u ∈ b ∧ u ∉ a)):= by
-    by_contra in_intersection -- The opposite of the statement above only occurs if u is in and b (i.e the union)
+
+  have only_in_one : (u ∈ a ∧ u ∉ b) ∨ ((u ∈ b ∧ u ∉ a)):= by -- Claim that for 'u'', it is either in a or b, but not the other
+    by_contra in_intersection -- The opposite of the statement above only occurs if u is in a and b (i.e the union)
+
     simp_all only [not_or, not_and, not_not]
-    obtain ⟨a_imp_b, b_imp_a⟩ := in_intersection
-    cases u_prop with
-    | inl in_a =>
-      have nonempty_inter : ∅ ≠ a ∩ b := by
+    obtain ⟨a_imp_b, b_imp_a⟩ := in_intersection -- a_imp_b states that if u is in a then it is also in b. b_imp_a is the same with a and b swapped around.
+
+    cases u_prop with -- We know u is in a or b, so let we split that or into both sides
+    | inl in_a => -- If u ∈ a
+      have nonempty_inter : ∅ ≠ a ∩ b := by -- I claim this means the intersection is not nonempty
 
         have in_inter : u ∈ a ∩ b := by
 
-          have u_in_b : u ∈ b := by
+          have u_in_b : u ∈ b := by -- u is in b as a direct consequence of a_imp_b and in_a
             exact a_imp_b in_a
 
-          exact Set.mem_inter in_a u_in_b
+          exact Set.mem_inter in_a u_in_b -- So it is both sides of the intersection, so it in the intersection
 
         exact Ne.symm (ne_of_mem_of_not_mem' in_inter fun a => a)
 
-      exact nonempty_inter empty_inter
-    | inr in_b =>
-      have nonempty_inter : ∅ ≠ a ∩ b := by
+      exact nonempty_inter empty_inter -- But this contraicts our assumption that a ∩ b was empty
+    | inr in_b => -- If u ∈ b
+      have nonempty_inter : ∅ ≠ a ∩ b := by -- Proof is the same as the case above but with a and b swapped
 
         have in_inter : u ∈ a ∩ b := by
 
@@ -577,7 +630,7 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V] [Nonempty V]
 
       exact nonempty_inter empty_inter
 
-  cases only_in_one with
+  cases only_in_one with -- As u is either in a and not in b or vice versa, we can split the or statement into two cases
   | inl in_a_not_b =>
 
     obtain ⟨in_a, not_in_b⟩ := in_a_not_b
@@ -593,7 +646,7 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V] [Nonempty V]
 
         rw [Set.toFinset_singleton, Finset.card_singleton] -- The cardinality of a singleton is always one, and {u} is a singelton
 
-       -- There is some peculairity of Fintypes that means this must be asserted before we close hthe goal
+       -- There is some peculairity of Fintypes that means this must be asserted before we close the goal
         have card_eq : my_Fintype.card = (Fintype.ofFinite ↑(a ∪ b)).card := by
           exact my_card_congr' my_Fintype (Fintype.ofFinite ↑(a ∪ b)) rfl
 
@@ -605,22 +658,26 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V] [Nonempty V]
         exact u_prop-- This is exactly one of the assumptions
 
 
-    have card_union_without_u_eq_y  : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card = y := by
+    have card_union_without_u_eq_y  : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card = y := by -- (Fintype.ofFinite ↑(a ∪ b)).card = y + 1 by hu, so this is just subbing that in a simplifying
       simp_all only [add_tsub_cancel_right]
 
     have a_plus_b_without_u : (Fintype.ofFinite ↑(a \ {u})).card + (Fintype.ofFinite ↑(b \ {u})).card = y := by
-      have eq :  (a ∪ b) \ {u} = ((a \ {u}) ∪ (b \ {u})) := by
+
+      have eq :  (a ∪ b) \ {u} = ((a \ {u}) ∪ (b \ {u})) := by -- We see the set in card_union_without_u_eq_y has equality naturally
         exact Set.union_diff_distrib
 
-      have card_eq : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card =  ( Fintype.ofFinite ↑( (a \ {u}) ∪ (b \ {u}) ) ).card := by
+       -- And so we see that the cardinalities on either side of 'eq' are the same
+      have card_eq : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card = ( Fintype.ofFinite ↑( (a \ {u}) ∪ (b \ {u}) ) ).card := by
         exact my_card_congr' (Fintype.ofFinite ↑((a ∪ b) \ {u})) (Fintype.ofFinite ↑(a \ {u} ∪ b \ {u})) (congrArg Set.Elem eq)
 
-      rw [card_eq] at card_union_without_u_eq_y
+      rw [card_eq] at card_union_without_u_eq_y -- We sub this cardinality equality in
 
+      /- Currently the induction is not written in the appropariate manner, it needs to be fixed-/
       -- apply hy at card_union_without_u_eq_y WHEN ITS FIXED
       sorry
 
-    have a_without_u_card_eq_minus_one : (Fintype.ofFinite ↑(a \ {u})).card = (Fintype.ofFinite a).card - 1 := by -- the same as the proof for the union above
+    -- This same as the proof for the union above, but for just a instead
+    have a_without_u_card_eq_minus_one : (Fintype.ofFinite ↑(a \ {u})).card = (Fintype.ofFinite a).card - 1 := by
       simp [← Set.toFinset_card]
 
       have decidableEq : DecidableEq V:= by exact Classical.typeDecidableEq V
@@ -638,12 +695,13 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V] [Nonempty V]
       rw [Set.toFinset_singleton, Set.subset_toFinset, Finset.coe_singleton, Set.singleton_subset_iff]
       exact in_a
 
-
+    -- As u is not in b, its removal does not affect the cardinality
     have b_card_without_u_eq_b_card : (Fintype.ofFinite ↑(b \ {u})).card = (Fintype.ofFinite b).card := by
 
-      have b_without_u_eq_b : ↑b = ↑(b \ {u}):= by
+      have b_without_u_eq_b : ↑b = ↑(b \ {u}):= by -- As it not in the set, removing u does not change b
         exact Eq.symm (Set.diff_singleton_eq_self not_in_b)
 
+      -- By b_without_u_eq_b cardinalities are the same as the sets are the same
       exact my_card_congr' (Fintype.ofFinite ↑(b \ {u})) (Fintype.ofFinite ↑b) (congrArg Set.Elem (id (Eq.symm b_without_u_eq_b)))
 
     rw [a_without_u_card_eq_minus_one] at a_plus_b_without_u -- apply the above results to a_plus_b_without_u
@@ -676,123 +734,118 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V] [Nonempty V]
     simp_all only [add_tsub_cancel_right] -- and simplify
     rfl -- the left and right side to our goal are the same as succ n = n + 1, so we are done
 
-    -- shoudl use whatever the opppositve of insert is rather than \ i think -- GET RID OF THIS
-    -- card (union \ u) = card (union) - 1
-    -- subst hu to get card (union \ u) = y + 1 - 1 = y
-    -- so apply hy to get card (a \ u) +  card (b \ u) = y
-    -- card (b \ u) = card (b) as u not in b (so card the same)
-    -- card (a \ u) = card (a) - 1
-    -- so card (b) + card (a) = y + 1 (add 1 to both sides)
-    -- done
   | inr in_b_not_a =>
     -- copy of above with b, maybe make a lemma (okay... definitely)
     sorry
 
 /-- This a proof of the fact that if an acyclic graph on V (finite, nonempty) has two connected
- components generated from the endpoint of an edge removed from G, the intesection of the connected
+ components generated from the endpoint of an edge removed from G, the intersection of the connected
  components verticies is empty -/
 lemma conn_comp_empty_intersection {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V} (G_Acyclic : isAcyclic G) {x y : V}
                                    (in_edgeSet : s(x,y) ∈ G.edgeSet) (G_del_edge : SimpleGraph V) {G1 G2 : G_del_edge.ConnectedComponent}
-                                   (G_del_edge_val : G_del_edge = G.deleteEdges (putEdgeInSet s(x,y)))
+                                   (G_del_edge_val : G_del_edge = G.deleteEdges (putElemInSet s(x,y)))
                                    (G1_val : G1 = G_del_edge.connectedComponentMk x) (G2_val : G2 = G_del_edge.connectedComponentMk y)
                                   : G1.supp ∩ G2.supp = ∅ := by
-  --TO DO: COMMENT THIS
 
   unfold SimpleGraph.ConnectedComponent.supp
-  by_contra not_emptyset
+  by_contra not_emptyset -- We prove by contradiction, and so gain an assumption that then intersection of the supps is not empty
 
-  have exists_mem : ∃ v : V, v ∈ (G1.supp ∩ G2.supp) := by
-    have nonempty : Nonempty ↑(G1.supp ∩ G2.supp) := by
+  have exists_mem : ∃ v : V, v ∈ (G1.supp ∩ G2.supp) := by -- As it is not empty, clearly an element of V exist such that is is in the set
+
+    have nonempty : Nonempty ↑(G1.supp ∩ G2.supp) := by -- Follows from not_emptyset
       exact Set.nonempty_iff_ne_empty'.mpr not_emptyset
+
     exact nonempty_subtype.mp nonempty
-  obtain ⟨v,v_prop⟩ := exists_mem
-  have eq : G1 = G2 := by
-    rw [Set.mem_inter_iff] at v_prop
-    rw [SimpleGraph.ConnectedComponent.mem_supp_iff] at v_prop
-    rw [SimpleGraph.ConnectedComponent.mem_supp_iff] at v_prop
+
+  obtain ⟨v,v_prop⟩ := exists_mem -- Let 'v' be this element and 'v_prop' its membership property
+
+  have eq : G1 = G2 := by -- I claim this means G1 and G2 are the same component
+    rw [Set.mem_inter_iff] at v_prop -- We see this means v is in the support of both parts of the intersection
+    simp [SimpleGraph.ConnectedComponent.mem_supp_iff] at v_prop -- We see G_del_edge.connectedComponentMk v = G1 and also G2 as this is what being in the supp means
     obtain ⟨left, right⟩ := v_prop
-    subst right left
+    subst right left -- As G1 and G2 are equal to the same value, we are done
     rfl
+
   unfold isAcyclic at G_Acyclic
   unfold hasACycle at G_Acyclic
-  simp [not_exists] at G_Acyclic
+  simp [not_exists] at G_Acyclic -- We unfold acylicness of G for a contradiction later
   unfold SimpleGraph.ConnectedComponent.supp at v_prop
-  have deleted_reachable : G_del_edge.Reachable x y := by
-    subst G_del_edge_val G1_val G2_val
-    rw [SimpleGraph.ConnectedComponent.eq] at eq
-    exact eq
-  have x_cycle_exists : ∃ p : G.Walk y y , p.IsCycle := by
-    rw [SimpleGraph.mem_edgeSet] at in_edgeSet
-    unfold SimpleGraph.Reachable at deleted_reachable
 
-    have exists_walk : ∃ p, p ∈ (Set.univ : Set (G_del_edge.Walk x y)) := by
+  have deleted_reachable : G_del_edge.Reachable x y := by
+    subst G1_val G2_val -- As G1 = G2, we see the connected components containing x and y are the same
+    rw [SimpleGraph.ConnectedComponent.eq] at eq -- An this result gives us the reachability for our goal
+    exact eq
+
+  have x_cycle_exists : ∃ p : G.Walk y y, p.IsCycle := by -- I claim we now know there exists a cycle containing y in G
+    rw [SimpleGraph.mem_edgeSet] at in_edgeSet
+
+    have exists_walk : ∃ p, p ∈ (Set.univ : Set (G_del_edge.Walk x y)) := by -- First we show there exists a walk from x to y in G_del_edge
 
       have nonempty : Nonempty (SimpleGraph.Walk G_del_edge x y) := by -- needed implicitly for the exact below, follows from deleted_reachable
         exact deleted_reachable
 
       exact Set.exists_mem_of_nonempty (SimpleGraph.Walk G_del_edge x y)
 
-    obtain ⟨p_sub,p_sub_prop⟩ := exists_walk
+    obtain ⟨p_sub, p_sub_prop⟩ := exists_walk -- Let 'p_sub' be such a walk
 
-    have del_is_subgraph : G_del_edge ≤ G := by
+    have del_is_subgraph : G_del_edge ≤ G := by -- G_del_edge must be a subgraph by a property of all graphs made using deleteEdges
       rw [G_del_edge_val]
-      exact SimpleGraph.deleteEdges_le (putEdgeInSet s(x, y))
+      exact SimpleGraph.deleteEdges_le (putElemInSet s(x, y))
 
-    have y_x_Adj : G.Adj y x := by exact id (SimpleGraph.adj_symm G in_edgeSet)
+    have y_x_Adj : G.Adj y x := by exact id (SimpleGraph.adj_symm G in_edgeSet) -- Reverse the adjacency of x and y
 
-    let p1 := SimpleGraph.Walk.mapLe del_is_subgraph p_sub
-    have dec_eq_V : DecidableEq V := by exact Classical.typeDecidableEq V
-    let p1_path_from_to_path := SimpleGraph.Walk.toPath p1-- takes the underlying path of p1
-    let p1_path := p1_path_from_to_path.val
-    let p2 := SimpleGraph.Walk.cons y_x_Adj p1_path
+    let p1 := SimpleGraph.Walk.mapLe del_is_subgraph p_sub -- As G_del_edge is a subgraph of G, we can map any walk in it (namely p_sub) to one in G
 
-    have p2_is_cycle : p2.IsCycle := by
+    have dec_eq_V : DecidableEq V := by exact Classical.typeDecidableEq V -- A trivial property needed for SimpleGraph.Walk.toPath
+    -- Every walk contains an underlying path found by removing redundant edges.
+    let p1_path_from_to_path := SimpleGraph.Walk.toPath p1 -- This function takes gets the underlying path of p1
+    let p1_path := p1_path_from_to_path.val -- Call the path 'p1_path'
+    let p2 := SimpleGraph.Walk.cons y_x_Adj p1_path -- Adjoin the edge from y to x to start of this path, called the new path 'p2'
 
-      have x_y_edge_not_in_p1_path : s(y,x) ∉ p1_path.edges := by
-          by_contra e_in_p1_path
+    have p2_is_cycle : p2.IsCycle := by -- I claim this is a cycle
 
-          have in_p_sub : s(y,x) ∈ p_sub.edges := by
+      have x_y_edge_not_in_p1_path : s(y,x) ∉ p1_path.edges := by -- First we show that s(y,x) was not in p1_path, thus we were adding a non repeated edge
+          by_contra e_in_p1_path -- suppose it is in the edges
 
-            have subset_edges : p1_path.edges ⊆ p_sub.edges  := by
+          have in_p_sub : s(y,x) ∈ p_sub.edges := by -- Then I claim it must also have been in the set of edges in p_sub
 
-              have subset_edges_p1_path : p1_path.edges ⊆ p1.edges := by
+            have subset_edges : p1_path.edges ⊆ p_sub.edges  := by -- If it is a subset, then clearly the goal is solved
+
+              have subset_edges_p1_path : p1_path.edges ⊆ p1.edges := by -- As p1_path was derived using bypass from p1, the edges are subsets
                 exact SimpleGraph.Walk.edges_bypass_subset p1
 
-              have subset_edges_p1_sub : p1.edges = p_sub.edges := by
-                have p1_def : p1 = SimpleGraph.Walk.mapLe del_is_subgraph p_sub := by rfl
-                unfold SimpleGraph.Walk.mapLe at p1_def
-                simp_all only [SimpleGraph.Walk.edges_map, p1]
-                ext n a : 2
+              have subset_edges_p1_sub : p1.edges = p_sub.edges := by -- I also claim that the edge set of p1 and p_sub are the same
+
+                have p1_def : p1 = SimpleGraph.Walk.mapLe del_is_subgraph p_sub := by -- We reassert p1's defintion
+                  rfl
+                unfold SimpleGraph.Walk.mapLe at p1_def -- And unfold mapLe at the definition
+                simp_all only [SimpleGraph.Walk.edges_map, p1] -- We can simplify what this gives use
+                ext n a : 2 -- and aesop closes the goal
                 simp_all only [List.getElem?_map, Option.mem_def, Option.map_eq_some',
                   SimpleGraph.Hom.mapSpanningSubgraphs_apply, Sym2.map_id', id_eq, exists_eq_right]
-                -- figure out later...
 
-              exact subset_of_subset_of_eq subset_edges_p1_path subset_edges_p1_sub
+              exact subset_of_subset_of_eq subset_edges_p1_path subset_edges_p1_sub -- As p1_path.edges is a subset of a set equal to p_sub.edges, we are done
 
             exact subset_edges e_in_p1_path
 
-          have in_G_del : s(y,x) ∈ G_del_edge.edgeSet := by
+          have in_G_del : s(y,x) ∈ G_del_edge.edgeSet := by -- p_sub is a walk in G_del_edge and s(y,x) is in p_sub, so clearly the edge must be in the graph
             exact SimpleGraph.Walk.edges_subset_edgeSet p_sub in_p_sub
 
-          have symm_in_G_del : s(x, y) ∈ G_del_edge.edgeSet := by
+          have symm_in_G_del : s(x, y) ∈ G_del_edge.edgeSet := by -- s(y,x) = s(x,y), so that too is in G_del_edge
             have y_x_Adj : G_del_edge.Adj y x := by exact in_G_del
             exact id (SimpleGraph.adj_symm G_del_edge y_x_Adj)
 
-          subst G_del_edge_val
-          unfold putEdgeInSet at symm_in_G_del
-
-          rw [SimpleGraph.mem_edgeSet] at symm_in_G_del
-
-          rw [SimpleGraph.deleteEdges_adj] at symm_in_G_del
-
-          rw [Set.mem_singleton_iff] at symm_in_G_del
-
+          subst G_del_edge_val -- But this edge was deleted from G_del_edge by contstruction, so we get a contradiction
+          unfold putElemInSet at symm_in_G_del
+          rw [SimpleGraph.mem_edgeSet, SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff] at symm_in_G_del
           simp_all only --One of the statements in symm_in_G_del is a contradiction, so we are done
-      exact SimpleGraph.Path.cons_isCycle p1_path_from_to_path y_x_Adj x_y_edge_not_in_p1_path
 
-    exact False.elim (G_Acyclic y p2 p2_is_cycle)
+      exact SimpleGraph.Path.cons_isCycle p1_path_from_to_path y_x_Adj x_y_edge_not_in_p1_path -- So we have enough to use cons_isCycle to close the goal
 
-  subst G_del_edge_val-- sort this out later
+    apply Exists.intro -- So we have found such a cycle, and we are done
+    · exact p2_is_cycle
+
+  subst G_del_edge_val -- But we have now found a cycle in our acyclic graph G, a contradiction
   simp_all only [exists_const]
 
 /-- A proof that for all paths p and n ≤ p.length, p.getVert n ∈ p.support -/
@@ -800,67 +853,81 @@ lemma getVert_in_support {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V} 
   rw [SimpleGraph.Walk.mem_support_iff_exists_getVert]
   exact Filter.frequently_principal.mp fun a => a rfl h
 
-def getVert_to_support_index_map {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V} {x y : V} (p : G.Walk x y) (p_length_gt_zero : p.length > 0) (v : V)
+/-- A map from the set of natural numbers 'n' such that for a given path 'p' and given 'v' of type 'V', p.getVert n = v and
+0 < n and n < p.length to the set of numbers of type Fin p.length such that p.support[n] = v (For the same n and v ) -/
+def getVert_to_support_index_map {V : Type} [Finite V] {G : SimpleGraph V} {x y : V} (p : G.Walk x y) (p_length_gt_zero : p.length > 0) (v : V)
   :  {n : ℕ| p.getVert n = v ∧ 0 < n ∧ n < p.length} → {n : Fin p.length | p.support[n] = v } :=fun
     | .mk val property => {
       val := by
-        exact Fin.ofNat' val p_length_gt_zero
-      property := by
-        obtain ⟨is_getVert, property⟩ := property
+        exact Fin.ofNat' val p_length_gt_zero -- The value is just the natural number in the set casted to itself as a Fin p.length
+      property := by -- We must now prove that p.support [Fin.ofNat' val p_length_gt_zero] = v
+        obtain ⟨is_getVert, property⟩ := property -- We acquire the properties that val's set membership implies
         obtain ⟨gt_0, lt_length⟩ := property
-        subst is_getVert
-        simp_all only [Fin.getElem_fin, Set.mem_setOf_eq, Fin.val_ofNat']
-        have mod_does_nothing : val % p.length = val := by
+
+        subst is_getVert -- We must now show instead that p.support[n] = p.getVert val
+        simp_all only [Fin.getElem_fin, Set.mem_setOf_eq, Fin.val_ofNat'] -- We see that Fin.ofNat' val p_length_gt_zero = val mod p.length
+
+        have mod_does_nothing : val % p.length = val := by -- As val is a ℕ less than p.length, the modulo has no effect
             exact Nat.mod_eq_of_lt lt_length
-        simp_all only
-        unfold SimpleGraph.Walk.support
-        split
-        next v x_1 => simp_all only [SimpleGraph.Walk.length_nil, not_lt_zero']
-        next v x_1 v_1 h q =>
-          simp_all only [SimpleGraph.Walk.length_cons] -- maybe get rid of
-          generalize hnV : (SimpleGraph.Walk.cons h q).length - 1 = nV
-          induction nV using Nat.case_strong_induction_on with -- DIDNT FIX IT
-          | hz =>
+
+        simp_all only -- Sub in mod_does_nothing (rw does not work due to 'motive' correctness)
+
+        unfold SimpleGraph.Walk.support -- We unfold support to see has two cases based on wether the walk is nil or cons
+        split -- Let us split into these two cases
+        next v x_1 => -- The nil case is trivial
+          simp_all only [SimpleGraph.Walk.length_nil, not_lt_zero']
+        next v x_1 v_1 h q => -- In the case where p is replaced with SimpleGraph.Walk.cons h q
+          generalize hnV : (SimpleGraph.Walk.cons h q).length - 1 = nV -- We induct on the length of the walk
+          induction nV using Nat.case_strong_induction_on with -- NEED TO CHANGE
+          | hz => -- In the case where (SimpleGraph.Walk.cons h q).length = 1
+            -- We see q must be nil and thus there is only one value each side of the goal can have, so we are done
             simp_all only [SimpleGraph.Walk.length_cons, add_tsub_cancel_right, zero_add, Nat.lt_one_iff,
               List.getElem_cons_zero, SimpleGraph.Walk.getVert_zero]
-          | hi y hy =>
-            have hypothesis_should_be : q.support[Fin.ofNat' (val - 1) p_length_gt_zero] = q.getVert (val - 1) := by
+          | hi y hy => -- INDUCTIVE HYP COMMENT LATER
+            have hypothesis_should_be : q.support[Fin.ofNat' (val - 1) p_length_gt_zero] = q.getVert (val - 1) := by -- This is how I want the inductive step to work
               sorry
 
-            have mod_does_nothing2 : val % (y + 1 + 1) = val := by
+            have mod_does_nothing2 : val % (y + 1 + 1) = val := by -- As val is less than (y + 1 + 1), the modulus has no effect
               simp_all only [SimpleGraph.Walk.length_cons, add_tsub_cancel_right, Nat.mod_succ_eq_iff_lt]
 
-            simp_all only [SimpleGraph.Walk.length_cons, add_tsub_cancel_right, Fin.getElem_fin, Fin.val_ofNat', Nat.succ_eq_add_one, add_right_eq_self, one_ne_zero, false_implies]
+            -- Sorts out any Fin.ofNat' and replaces the length of the cons with the length of q plus one
+            simp_all only [SimpleGraph.Walk.length_cons, add_tsub_cancel_right, Fin.getElem_fin, Fin.val_ofNat']
 
-
-            rw [SimpleGraph.Walk.getVert_cons]
+            rw [SimpleGraph.Walk.getVert_cons] -- We also see that getvert of the cons is also just getvert of q with the value reduced by one
 
             have support_equality : (x :: q.support)[Fin.ofNat' val p_length_gt_zero] = (q.support)[Fin.ofNat' (val - 1) p_length_gt_zero] := by
-              let neq_zero := Nat.not_eq_zero_of_lt gt_0
-              let exists_n := Nat.exists_eq_succ_of_ne_zero neq_zero
-              obtain ⟨n, n_prop⟩ := exists_n
-              simp_all only [Nat.succ_eq_add_one, add_tsub_cancel_right]
+              let neq_zero := Nat.not_eq_zero_of_lt gt_0 -- We first see that as val is greater that zero it is not zero
+              let exists_n := Nat.exists_eq_succ_of_ne_zero neq_zero -- Thus we see there exists an n such that val = n.succ
+              obtain ⟨n, n_prop⟩ := exists_n -- obtain this n and its properties
+
+              simp_all only [Nat.succ_eq_add_one, add_tsub_cancel_right] -- Replace val with this n + 1 and simplify where we had val - 1
               dsimp at *
-              simp_all only [add_lt_add_iff_right, List.getElem_cons_succ]
-              have mod_eq : n % (y + 1 + 1) = n := by
+              simp_all only [add_lt_add_iff_right, List.getElem_cons_succ] -- And simplify to turn the goal into q.support[n] = q.getVert n
+
+              have mod_eq : n % (y + 1 + 1) = n := by -- As n is less than (y + 1 + 1), the modulus has no effect
                 simp_all only [Nat.mod_succ_eq_iff_lt, Nat.succ_eq_add_one, add_lt_add_iff_right]
                 exact Nat.lt_add_right 1 lt_length
+
+              -- Thus hypothesis_should_be CHANGE THAT WHEN YO FIX IT is exactly the goal when we apply mod_eq
               simp_all only
 
             dsimp at support_equality
-
             simp_all only [Nat.mod_succ_eq_iff_lt, Nat.succ_eq_add_one, ne_eq]
+            -- Simplifying support_equality turns it into (x :: q.support)[val % (y + 1 + 1)] = q.getVert (val - 1)
 
-            have mod_does_nothing2 : val % (y + 1 + 1) = val := by -- why have to do twice
+            have mod_does_nothing2 : val % (y + 1 + 1) = val := by -- We must reassert this
               simp_all only [SimpleGraph.Walk.length_cons, add_tsub_cancel_right, Nat.mod_succ_eq_iff_lt]
 
+            -- Thus we can simpify hypothesis_should_be CHANGE CHANGE CHANGE, and it becomes exactly our goal
             simp_all only [Nat.mod_succ_eq_iff_lt, Nat.succ_eq_add_one]
-            exact Nat.not_eq_zero_of_lt gt_0
 
+            exact Nat.not_eq_zero_of_lt gt_0 -- But this only works if val ≠ 0, which follows from val being greater than zero (gt_0)
     }
 
-def takeUntil_length_lt_if_endpoints_neq {V : Type} [Finite V] [Nonempty V] [DecidableEq V] {G : SimpleGraph V} {x y z : V} (p : G.Walk x y) (in_sup : z ∈ p.support)
-                 (neq : z ≠ y) : (p.takeUntil z in_sup).length < p.length := by
+/-- A proof that if we take the edges of a walk up until a vertex in a walk that is not the endpoint of the walk,
+then the walk we have made has strictly shorter length than the parent walk -/
+def takeUntil_length_lt_if_endpoints_neq {V : Type} [DecidableEq V] {G : SimpleGraph V} {x y z : V} (p : G.Walk x y)
+                 (in_sup : z ∈ p.support) (neq : z ≠ y) : (p.takeUntil z in_sup).length < p.length := by
 
   have leq : (p.takeUntil z in_sup).length ≤ p.length := by -- A natural property takeUntil possesses
     exact SimpleGraph.Walk.length_takeUntil_le p in_sup
@@ -893,13 +960,16 @@ def takeUntil_length_lt_if_endpoints_neq {V : Type} [Finite V] [Nonempty V] [Dec
 
   exact Nat.lt_of_le_of_ne leq neq -- Less than or equal to and not equal naturally implies less than
 
-theorem my_set_fintype_card_le_univ (V : Fintype α) (set : Set α) (s : Fintype set) : -- An adaptation of set_fintype_card_le_univ for my use case in onetwothreefour_implies_five_part_1
+/-- An adaptation of the built-in set_fintype_card_le_univ for my use case in onetwothreefour_implies_five_part_1 -/
+theorem my_set_fintype_card_le_univ (V : Fintype α) (set : Set α) (s : Fintype set) :
     Fintype.card set ≤ Fintype.card α :=
   Fintype.card_le_of_embedding (Function.Embedding.subtype set)
 
+/-- A proof that if for a path in G from e_1 or e_2 to some v in G' that is not e_val_1 or 2 and e_val_1 or 2 is in the path then
+ if some edge is in the path up until the e_val that is in it then it is in G_e_removed. There are also numerable additional assumptions -/
 lemma edges_of_p_cut_in_G_e_removed {V : Type} [Finite V] [Nonempty V] [DecidableEq V] {G G_e_removed: SimpleGraph V}
                          {e_val_1 e_val_2 : V} (edge_in_G : s(e_val_1, e_val_2) ∈ G.edgeSet)
-                         (G_e_removed_val : G_e_removed = G.deleteEdges (putEdgeInSet s(e_val_1, e_val_2))) {G' G'' : G.Subgraph}
+                         (G_e_removed_val : G_e_removed = G.deleteEdges (putElemInSet s(e_val_1, e_val_2))) {G' G'' : G.Subgraph}
                          (G'_val : G' = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_1))
                          (G''_val : G'' = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_2))
                          {v : V} (v_in_G' : v ∈ G'.verts) (empty_intersection : G'.verts ∩ G''.verts = ∅)
@@ -908,87 +978,94 @@ lemma edges_of_p_cut_in_G_e_removed {V : Type} [Finite V] [Nonempty V] [Decidabl
                          {my_val : V} (my_val_in_sup : my_val ∈ p.support)
                          (my_val_eq_or : my_val = e_val_1 ∨ my_val = e_val_2)
                          (e_num_not_in_G' : e_num ∉ G'.verts) (e_num_not_in_G'' : e_num ∉ G''.verts)
-                         (v_not_e_num_reachable : ¬(G.deleteEdges (putEdgeInSet s(e_val_1, e_val_2))).Reachable e_num v)
+                         (v_not_e_num_reachable : ¬(G.deleteEdges (putElemInSet s(e_val_1, e_val_2))).Reachable e_num v)
                          {n_1 n_2 : ℕ} (n_1_prop_1 : p.getVert n_1 = my_val) (n_1_prop_2 : n_1 ≤ p.length)
-                        (n_2_prop_1 : p.getVert n_2 ∈ {e_val_1, e_val_2} \ putElemInSet my_val)
+                         (n_2_prop_1 : p.getVert n_2 ∈ {e_val_1, e_val_2} \ putElemInSet my_val)
                          (n_2_prop_2 : n_2 ≤ p.length) (not_equal : n_1 < n_2)
                          : ∀ e, e ∈ (p.takeUntil my_val my_val_in_sup).edges → e ∈ G_e_removed.edgeSet := by
 
-  let p_cut := SimpleGraph.Walk.takeUntil p my_val my_val_in_sup
-  by_contra exists_edge_not_in_G_e_removed
+  let p_cut := p.takeUntil my_val my_val_in_sup -- Define p_cut as the path in the goal
+  by_contra exists_edge_not_in_G_e_removed -- Suppose there is exists an edge in p_cut but not G_e_removed
   simp [not_forall] at exists_edge_not_in_G_e_removed
-  obtain ⟨x, x_props⟩ := exists_edge_not_in_G_e_removed
+  obtain ⟨x, x_props⟩ := exists_edge_not_in_G_e_removed -- Let this edge be x
   obtain ⟨x_in_p_cut, x_not_in_G_e_removed⟩ := x_props
-  have eq_e_val : x = s(e_val_1, e_val_2) := by
-    have in_G_edgeSet : x ∈ G.edgeSet := by
+
+  have eq_e_val : x = s(e_val_1, e_val_2) := by -- I claim this edge must be e_val
+    have in_G_edgeSet : x ∈ G.edgeSet := by -- Clearly it x is in G as p_cut is a walk in G
       exact SimpleGraph.Walk.edges_subset_edgeSet p_cut x_in_p_cut
 
-    have only_edge_removed_is_e_val : G.edgeSet \ G_e_removed.edgeSet = {s(e_val_1, e_val_2) } := by
-      rw [G_e_removed_val]
-      rw [SimpleGraph.edgeSet_deleteEdges, sdiff_sdiff_right_self]
-      unfold putEdgeInSet
+    -- We also see that the only edge in G and not G_e_removed is s(e_val_1, e_val_2)
+    have only_edge_removed_is_e_val : G.edgeSet \ G_e_removed.edgeSet = {s(e_val_1, e_val_2)} := by
+      rw [G_e_removed_val, SimpleGraph.edgeSet_deleteEdges, sdiff_sdiff_right_self]
+      unfold putElemInSet -- We see that the LHS equivalent to the set of edges in G's edgeset and in {s(e_val_1, e_val_2)}
       rw [← Set.singleton_subset_iff] at edge_in_G
       rw [inf_of_le_right]
-      exact edge_in_G
+      exact edge_in_G -- As s(e_val_1, e_val_2) is in G, this intersection is exactly {s(e_val_1, e_val_2)}, so we are done
 
-    have x_in_G_without_G_e_removed : x ∈ G.edgeSet \ G_e_removed.edgeSet := by
+    have x_in_G_without_G_e_removed : x ∈ G.edgeSet \ G_e_removed.edgeSet := by -- x is in G and not in G_e_removed, so this follows naturally
       exact Set.mem_diff_of_mem in_G_edgeSet x_not_in_G_e_removed
 
-    simp_all only [Set.mem_singleton_iff]
+    simp_all only [Set.mem_singleton_iff] -- So x is in {s(e_val_1, e_val_2)}, and so is equaltto the edge
 
+  -- We see that the vertex at the position n_2 in p is still in p_cut
   have other_val_in_support : p.getVert n_2 ∈ p_cut.support := by-- follows from the edge containing e_val_2 being in the path
-    rw [eq_e_val] at x_in_p_cut
-    cases my_val_eq_or with
-    | inl eq_val_1 =>
-    have eq_other_val : p.getVert n_2 = e_val_2 := by
-      unfold putElemInSet at n_2_prop_1
+    rw [eq_e_val] at x_in_p_cut -- As x is e_val, we see that e_val is in p_cut as x is
+    cases my_val_eq_or with -- my_val is a variable passed passed into the lemma that is either e_val_1 or 2
+    | inl eq_val_1 => -- If my_val = e_val_1
+    have eq_other_val : p.getVert n_2 = e_val_2 := by -- The getVert n_2 is the other e_val
+      unfold putElemInSet at n_2_prop_1 -- This follows from simplifying the assumption defining this (n_2_prop_1)
       rw [eq_val_1] at n_2_prop_1
       simp_all only [Set.mem_singleton_iff, Set.insert_diff_of_mem, Set.mem_diff]
 
     rw [eq_other_val]
     exact SimpleGraph.Walk.snd_mem_support_of_mem_edges p_cut x_in_p_cut
-    | inr eq_val_2 =>
-    have eq_other_val : p.getVert n_2 = e_val_1 := by
+    | inr eq_val_2 => -- If my_val = e_val_2
+    have eq_other_val : p.getVert n_2 = e_val_1 := by -- This proof is nearly the same as the one found above
       unfold putElemInSet at n_2_prop_1
       rw [eq_val_2] at n_2_prop_1
-      obtain ⟨left, right⟩ := n_2_prop_1
+      obtain ⟨left, right⟩ := n_2_prop_1 -- Though we must simplify in a different manner here
       simp_all only [Set.mem_insert_iff, or_false]
 
-    rw [eq_other_val]
+    rw [eq_other_val] -- Then this part is the same
     exact SimpleGraph.Walk.fst_mem_support_of_mem_edges p_cut x_in_p_cut
 
+  -- As p.getVert n_2 is in p_cut's support there exists a ℕ less than its
+  -- length such that p_cut.getVert of this n is the same as the n_2th vertex in p
   rw [SimpleGraph.Walk.mem_support_iff_exists_getVert] at other_val_in_support
-  obtain ⟨n_2_cut, props⟩ := other_val_in_support
+  obtain ⟨n_2_cut, props⟩ := other_val_in_support -- Let n_2_cut be said ℕ
   obtain ⟨n_2_cut_prop_1, n_2_cut_prop_2⟩ := props
 
-  have getVert_length_eq_e_val_1 : p_cut.getVert p_cut.length = my_val := by
+  have getVert_length_eq_e_val_1 : p_cut.getVert p_cut.length = my_val := by -- We assert this trivial equality so we can rewrite with it later on
     exact SimpleGraph.Walk.getVert_length p_cut
 
+  /- This is a substantial proof that if two there are two natural numbers both less than the length of our p
+  and greater than zero, such that p_cut.getVert of the first number equals p.getVert of the second,
+  and the first number is less than or equal to the length of p_cut, then the two numbers are the same -/
   have index_eq {n m : ℕ} (h_n1 : n ≤ p_cut.length) (h_n2 : n < p.length) (h_n3 : (0 < n))
                           (h_m2 : m < p.length) (h_m3 : (0 < m))
                           (h_eq : p_cut.getVert n = p.getVert m) : n = m := by
 
-    have p_getVert_eq : p_cut.getVert n = p.getVert n := by
+    have p_getVert_eq : p_cut.getVert n = p.getVert n := by -- We first want to rewrite our equality using only p.getVert, this allows thsi
 
-      have p_eq : p = (p.takeUntil my_val my_val_in_sup ).append (p.dropUntil my_val my_val_in_sup ) := by -- We split p up into takeUntil and the remainder of the walk
+      -- We split p up into takeUntil and the remainder of the walk
+      have p_eq : p = (p.takeUntil my_val my_val_in_sup ).append (p.dropUntil my_val my_val_in_sup ) := by
         exact Eq.symm (SimpleGraph.Walk.take_spec p my_val_in_sup )
 
-      rw [p_eq]
-      rw [SimpleGraph.Walk.getVert_append]
+      -- We then see that if n is less than (p.takeUntil my_val my_val_in_sup).length,
+      -- then we can ignore the drop until, else we can ignore the takeUntil
+      rw [p_eq, SimpleGraph.Walk.getVert_append]
       split
-      · exact rfl
-      · rename_i not_less_than_length
+      · -- If n < (p.takeUntil my_val my_val_in_sup).length (= p_cut.length)
+        exact rfl -- The both sides of our goal are the same, just written differently, so we are done
+      · rename_i not_less_than_length -- If n ≥ (p.takeUntil my_val my_val_in_sup).length (= p_cut.length)
         rw [not_lt] at not_less_than_length
 
-        have n_eq_length : n = p_cut.length := by
+        have n_eq_length : n = p_cut.length := by -- Then it must be exactly equal due to the ≤ in h_n1
           exact Eq.symm (Nat.le_antisymm not_less_than_length h_n1)
         subst n_eq_length
 
-        have eq_0 : p_cut.length - (p.takeUntil my_val my_val_in_sup).length = 0:= by  -- defitinely doesn need own have
-          exact Nat.sub_self p_cut.length
-
-        rw [eq_0]
-        rw [SimpleGraph.Walk.getVert_zero, SimpleGraph.Walk.getVert_length]
+        -- So our goal is then to show my_val (p_cut.getVert p_cut.length) is equal to my_val ((p.dropUntil my_val my_val_in_sup).getVert 0)
+        rw [Nat.sub_self p_cut.length, SimpleGraph.Walk.getVert_zero, SimpleGraph.Walk.getVert_length] -- This is trivial, so the goal is closed
 
     have p_length_gt_0 : 0 < p.length := by -- n lies strictly between 0 and p.length, so p.length cannot be 0
       exact Nat.zero_lt_of_lt h_n2
@@ -1079,66 +1156,54 @@ lemma edges_of_p_cut_in_G_e_removed {V : Type} [Finite V] [Nonempty V] [Decidabl
 
       rw [n_2_cut_prop_1] at getVertEq -- We see the above implies e_val_1 = e_val_2
 
+       -- We see my val is in a set that does not contain itself by construction
       have in_other_val_set : my_val ∈ {e_val_1, e_val_2} \ putElemInSet my_val := by
         exact Set.mem_of_eq_of_mem (id (Eq.symm getVertEq)) n_2_prop_1
 
-      unfold putElemInSet at in_other_val_set
-      cases my_val_eq_or with
-      | inl eq_val_1 =>
-        rw [eq_val_1] at in_other_val_set
-        simp_all only [Set.mem_singleton_iff, Set.mem_diff]
-      | inr eq_val_2 =>
-        rw [eq_val_2] at in_other_val_set
-        simp_all only [Set.mem_singleton_iff, Set.mem_diff]
+      unfold putElemInSet at in_other_val_set -- Simplifying this clearly gives a contradiction
+      simp_all only [Set.mem_diff, Set.mem_insert_iff, Set.mem_singleton_iff, true_and]
 
     exact Nat.lt_of_le_of_ne n_2_cut_prop_2 (id (Ne.symm neq))
 
-  have n_2_cut_eq_n2 : n_2_cut = n_2 := by
+  have n_2_cut_eq_n2 : n_2_cut = n_2 := by -- We now can use the above to prove this equality
 
-    have n_2_lt_p_length : n_2 < p.length := by -- for n_1 case have n_1 < n_2 so use that
+    -- We begin by showing the prerequisites for index_eq hold
+    have n_2_lt_p_length : n_2 < p.length := by
 
       have neq : n_2 ≠ p.length := by
-        by_contra eq
+        by_contra eq -- Suppose they are equeal
 
         have n_2_eq_v : p.getVert n_2 = v := by
-          rw [eq] -- This is p.getVert p.length = v
+          rw [eq] -- Then this goal is p.getVert p.length = v
           apply SimpleGraph.Walk.getVert_length -- Which this lemma states as an identity
 
         rw [n_2_eq_v] at n_2_prop_1 -- So we have e_val_2 = v
         cases my_val_eq_or with
-        | inl eq_val_1 =>
-        have eq_other_val : p.getVert n_2 = e_val_2 := by
+        | inl eq_val_1 => -- If my_val = e_val_1
+        have eq_other_val : p.getVert n_2 = e_val_2 := by -- Then p.getVert n_2 = e_val_2 by defintion
           unfold putElemInSet at n_2_prop_1
           rw [eq_val_1] at n_2_prop_1
           simp_all only [Set.mem_singleton_iff, Set.insert_diff_of_mem, Set.mem_diff]
 
-        rw [eq_other_val] at n_2_eq_v
-        rw [← n_2_eq_v] at v_in_G' -- v ∈ G_1.verts means e_val_2 is in G_1.verts
+        rw [eq_other_val] at n_2_eq_v -- So v = e_val_2
+        exact v_neq_e_val_2 (id (Eq.symm n_2_eq_v)) -- This contradicts our assumption they were not equal
 
-        have e_val_2_in_union : e_val_2 ∈ G'.verts ∩ G''.verts := by
-          rw [G''_val]
-          exact Set.mem_inter v_in_G' rfl
-
-        rw [empty_intersection] at e_val_2_in_union
-        exact e_val_2_in_union
-
-        | inr eq_val_2 =>
-        have eq_other_val : p.getVert n_2 = e_val_1 := by
+        | inr eq_val_2 => -- If my_val = e_val_1
+        have eq_other_val : p.getVert n_2 = e_val_1 := by -- We use a very similar proof to solve this, and again we get a contradiction
           unfold putElemInSet at n_2_prop_1
           rw [eq_val_2] at n_2_prop_1
           obtain ⟨left, right⟩ := n_2_prop_1
           simp_all only [Set.mem_insert_iff, or_false]
 
         rw [eq_other_val] at n_2_eq_v
-
         exact v_neq_e_val_1 (id (Eq.symm n_2_eq_v))
 
-      exact Nat.lt_of_le_of_ne n_2_prop_2 neq
+      exact Nat.lt_of_le_of_ne n_2_prop_2 neq -- So n_2 ≤ p.length and it is not equal to it, so we get the required <
 
-    have n_2_gt_zero : 0 < n_2 := by
+    have n_2_gt_zero : 0 < n_2 := by -- We also see n_2 is non-zero
       by_contra not_gt_zero
 
-      have eq_zero : n_2 = 0 := by
+      have eq_zero : n_2 = 0 := by -- As n_2 is a ℕ, it is greater than or equal to zero, so being ≤ 0 means it must be 0
         exact Nat.eq_zero_of_not_pos not_gt_zero
 
       have getVert_eq_e_num : p.getVert n_2 = e_num := by
@@ -1148,28 +1213,27 @@ lemma edges_of_p_cut_in_G_e_removed {V : Type} [Finite V] [Nonempty V] [Decidabl
       rw [getVert_eq_e_num] at n_2_prop_1
 
       cases my_val_eq_or with
-      | inl eq_val_1 =>
+      | inl eq_val_1 => -- If my_val = e_val_1
         have eq_other_val : p.getVert n_2 = e_val_2 := by
           unfold putElemInSet at n_2_prop_1
           rw [eq_val_1] at n_2_prop_1
           simp_all only [Set.mem_singleton_iff, Set.insert_diff_of_mem, Set.mem_diff]
 
-        rw [eq_other_val] at getVert_eq_e_num
-        rw [G''_val] at e_num_not_in_G''
-        exact e_num_not_in_G'' (congrArg G_e_removed.connectedComponentMk (id (Eq.symm getVert_eq_e_num)))
-      | inr eq_val_2 =>
-        have eq_other_val : p.getVert n_2 = e_val_1 := by
+        rw [eq_other_val] at getVert_eq_e_num -- We see that v = e_val_2
+        rw [G''_val] at e_num_not_in_G'' -- So e_val_2 ∉ G'
+        exact e_num_not_in_G'' (congrArg G_e_removed.connectedComponentMk (id (Eq.symm getVert_eq_e_num))) -- This contradicts the defintion of G''
+      | inr eq_val_2 => -- If my_val = e_val_2
+        have eq_other_val : p.getVert n_2 = e_val_1 := by -- This proof is the same with the e_vals and G'/G'' swapped
           unfold putElemInSet at n_2_prop_1
           rw [eq_val_2] at n_2_prop_1
           obtain ⟨left, right⟩ := n_2_prop_1
           simp_all only [Set.mem_insert_iff, or_false]
 
         rw [eq_other_val] at getVert_eq_e_num
-        rw [G''_val] at e_num_not_in_G''
         rw [G'_val] at e_num_not_in_G'
         exact e_num_not_in_G' (congrArg G_e_removed.connectedComponentMk (id (Eq.symm getVert_eq_e_num)))
 
-    have n_2_cut_gt_zero : 0 < n_2_cut := by
+    have n_2_cut_gt_zero : 0 < n_2_cut := by -- By the same proof we also see n_2_cut must also be greater than zero
       by_contra not_gt_zero
 
       have eq_zero : n_2_cut = 0 := by
@@ -1203,48 +1267,48 @@ lemma edges_of_p_cut_in_G_e_removed {V : Type} [Finite V] [Nonempty V] [Decidabl
         exact e_num_not_in_G' (congrArg G_e_removed.connectedComponentMk n_2_cut_prop_1)
 
 
-    have n_2_cut_lt_p_length : n_2_cut < p.length := by
-      have cut_length_lt : p_cut.length ≤ p.length := by
+    have n_2_cut_lt_p_length : n_2_cut < p.length := by -- Finally, we see that n_2_cut is less than the length of p
+      have cut_length_lt : p_cut.length ≤ p.length := by -- We see that p_cut.length is at most as much as p.length
         exact SimpleGraph.Walk.length_takeUntil_le p my_val_in_sup
-      exact Nat.lt_of_lt_of_le n_2_cut_lt_p_cut_length cut_length_lt
+      exact Nat.lt_of_lt_of_le n_2_cut_lt_p_cut_length cut_length_lt -- And n_2_cut is strictly less than than, so we can combine the statements to close the goal
 
+    -- We can now use index_eq to close our goal
     exact index_eq n_2_cut_prop_2 n_2_cut_lt_p_length n_2_cut_gt_zero n_2_lt_p_length n_2_gt_zero n_2_cut_prop_1
 
-  have p_cut_length_eq_n_1 : p_cut.length = n_1 := by
+  have p_cut_length_eq_n_1 : p_cut.length = n_1 := by -- Again using index_eq, we will show this equality also holds
 
-    have getVert_eq : p_cut.getVert p_cut.length = p.getVert n_1 := by
-      rw [n_1_prop_1]
-      rw [getVert_length_eq_e_val_1]
+    have getVert_eq : p_cut.getVert p_cut.length = p.getVert n_1 := by -- First we acquire the relation, that in turn proves the equality
+      rw [n_1_prop_1, getVert_length_eq_e_val_1] -- Proving it falls out of previous results
 
-    have n_1_lt_p_length : n_1 < p.length := by
-      by_contra not_less_than
+    have n_1_lt_p_length : n_1 < p.length := by -- We then gather the prerequisites for index_eq
+      by_contra not_less_than -- Suppose they are not less than eachother
 
-      have eq : n_1 = p.length := by
+      have eq : n_1 = p.length := by -- As n_1 is less than or equal to length by n_1_prop_2, if they are not less than they must be equal
         rw [not_lt] at not_less_than
         exact Eq.symm (Nat.le_antisymm not_less_than n_1_prop_2)
 
-      have eq2: p.getVert n_1 = p.getVert p.length := by
+      have eq2: p.getVert n_1 = p.getVert p.length := by -- As they are equal, their getVerts are equal
           exact congrArg p.getVert eq
 
-      rw [n_1_prop_1, SimpleGraph.Walk.getVert_length] at eq2
+      rw [n_1_prop_1, SimpleGraph.Walk.getVert_length] at eq2 -- Replaceing the getVerts with their values we see my_val = v
 
       cases my_val_eq_or with
-      | inl eq_val_1 =>
+      | inl eq_val_1 => -- If my_val = e_val_1
       rw [eq_val_1] at eq2
-      exact v_neq_e_val_1 (id (Eq.symm eq2))
-      | inr eq_val_2 =>
+      exact v_neq_e_val_1 (id (Eq.symm eq2)) -- Then eq contradicts our assumption that v ≠ e_val_1
+      | inr eq_val_2 => -- If my_val = e_val_1
       rw [eq_val_2] at eq2
-      exact v_neq_e_val_2 (id (Eq.symm eq2))
+      exact v_neq_e_val_2 (id (Eq.symm eq2)) -- Same as above but e_va_1
 
-    have p_cut_lt_p_length : p_cut.length < p.length := by
-      have v_neq_my_val : v ≠ my_val := by
+    have p_cut_lt_p_length : p_cut.length < p.length := by -- Simillarly p_cut has less length than p
+      have v_neq_my_val : v ≠ my_val := by -- We know their enpoints are not equal
         cases my_val_eq_or with
         | inl eq_val_1 => exact Ne.symm (ne_of_eq_of_ne eq_val_1 (id (Ne.symm v_neq_e_val_1)))
         | inr eq_val_1 => exact Ne.symm (ne_of_eq_of_ne eq_val_1 (id (Ne.symm v_neq_e_val_2)))
-      exact takeUntil_length_lt_if_endpoints_neq p my_val_in_sup fun a =>
+      exact takeUntil_length_lt_if_endpoints_neq p my_val_in_sup fun a => -- And another lemma can close the goal
           v_neq_my_val (id (Eq.symm a))
 
-    have n_1_gt_zero : 0 < n_1 := by
+    have n_1_gt_zero : 0 < n_1 := by -- n_1 is also greater than zero by the same method used for n_2
       by_contra not_gt_zero
 
       have eq_zero : n_1 = 0 := by
@@ -1269,9 +1333,12 @@ lemma edges_of_p_cut_in_G_e_removed {V : Type} [Finite V] [Nonempty V] [Decidabl
 
     have p_cut_lt_zero: 0 < p_cut.length := by
       by_contra not_gt_zero
-      have length_eq_zero : p_cut.length = 0 := by exact Nat.eq_zero_of_not_pos not_gt_zero
-      apply SimpleGraph.Walk.eq_of_length_eq_zero at length_eq_zero
-      cases my_val_eq_or with
+      have length_eq_zero : p_cut.length = 0 := by  -- This follows from previous logic to other similar results
+        exact Nat.eq_zero_of_not_pos not_gt_zero
+
+      apply SimpleGraph.Walk.eq_of_length_eq_zero at length_eq_zero -- This tells us that e_num = my_val
+
+      cases my_val_eq_or with -- This section is the same as the proof of this propery for n_2
       | inl eq_val_1 =>
       rw [eq_val_1] at length_eq_zero
       rw [G'_val] at e_num_not_in_G'
@@ -1287,125 +1354,131 @@ lemma edges_of_p_cut_in_G_e_removed {V : Type} [Finite V] [Nonempty V] [Decidabl
     -- We have all the prerequisites for index_eq, so we are done
     exact index_eq p_cut_leq_p_cut p_cut_lt_p_length p_cut_lt_zero n_1_lt_p_length n_1_gt_zero getVert_eq
 
-  have n_1_lt_self : n_1 < n_1 := by -- ALREADY COMMENTED??
+  have n_1_lt_self : n_1 < n_1 := by --
     rw [p_cut_length_eq_n_1] at n_2_cut_lt_p_cut_length -- Get n_2_cut < n_1
     rw [n_2_cut_eq_n2 ] at n_2_cut_lt_p_cut_length -- Get n_2 < n_1
-    exact Nat.lt_trans not_equal n_2_cut_lt_p_cut_length
+    exact Nat.lt_trans not_equal n_2_cut_lt_p_cut_length -- And n_1 < n_2 by not_equal so combine the inequalties
 
-  exact (lt_self_iff_false n_1).mp n_1_lt_self --  n_1_lt_self cannot be true, so we have found a contradiction
+  exact (lt_self_iff_false n_1).mp n_1_lt_self --  n_1 < n_1 cannot be true, so we have found a contradiction
 
+/-- A proof that if two connected components of a preconnected graph with an edge removed, each rooted at either end
+of the removed edge, have a nonempty intersection and there is an element 'e_num' not in either of them  then for all
+vertices of G in G' that are not e_val_1 or 2, the vertex is reachable from e_num in G_e_removed -/
 lemma reachableToAllVerts {V : Type} [Finite V] [Nonempty V] {G G_e_removed: SimpleGraph V} (G_preconnected : G.Preconnected)
                          {e_val_1 e_val_2 : V} (edge_in_G : s(e_val_1, e_val_2) ∈ G.edgeSet)
-                         (G_e_removed_val : G_e_removed = G.deleteEdges (putEdgeInSet s(e_val_1, e_val_2))) {G' G'' : G.Subgraph}
+                         (G_e_removed_val : G_e_removed = G.deleteEdges (putElemInSet s(e_val_1, e_val_2))) {G' G'' : G.Subgraph}
                          (G'_val : G' = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_1))
                          (G''_val : G'' = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_2))
                          (empty_intersection : G'.verts ∩ G''.verts = ∅)
                          {e_num : V} (e_num_not_in_G' : e_num ∉ G'.verts) (e_num_not_in_G'' : e_num ∉ G''.verts)
-                         : ∀ v, v ∈ G'.verts ∧ v ≠ e_val_1 ∧ v ≠ e_val_2 →  G_e_removed.Reachable e_num v := by
-  by_contra exists_exception
+                         : ∀ v, v ∈ G'.verts ∧ v ≠ e_val_1 ∧ v ≠ e_val_2 → G_e_removed.Reachable e_num v := by
+  by_contra exists_exception -- Suppose there is avertex in G' that is not an e_val_i and is not reachable from e_num in G_e_removed
   let e_val := s(e_val_1, e_val_2)
   simp [not_forall] at exists_exception
-  obtain ⟨v, v_prop⟩ := exists_exception
-  obtain ⟨v_in_G_1, v_prop⟩ := v_prop
+  obtain ⟨v, v_prop⟩ := exists_exception -- Let v be such a vertex
+  obtain ⟨v_in_G_1, v_prop⟩ := v_prop -- And accquire its properties
   obtain ⟨v_neq_e_val_1, v_prop⟩ := v_prop
   obtain ⟨v_neq_e_val_2, v_not_e_num_reachable⟩ := v_prop
 
+  -- We see there must exists a walk from e_num to v in G, as this is what it means for G to be preconnected
   have exists_walk : ∃ p, p ∈ (Set.univ : Set (G.Walk e_num v)) := by
     have nonempty : Nonempty (SimpleGraph.Walk G e_num v) := by
       exact G_preconnected e_num v
     exact Set.exists_mem_of_nonempty (SimpleGraph.Walk G e_num v)
 
-  have dec_eq_V : DecidableEq V := by -- needed for multiple lemmas used below
+  have dec_eq_V : DecidableEq V := by -- Needed for multiple lemmas used below; its proof is trivial
       exact Classical.typeDecidableEq V
 
-  obtain ⟨p, p_prop⟩ := exists_walk
+  obtain ⟨p, p_prop⟩ := exists_walk -- Let p be said walk from e_num to v
   let p_to_path := p.toPath
-  obtain ⟨p, p_prop⟩ := p.toPath
+  obtain ⟨p, p_prop⟩ := p.toPath -- We turn p into its underlying path
 
   let e_val_in_path := e_val ∈ p.edges
   by_cases e_val_in_path
   · rename_i in_path
-    simp_all only [e_val_in_path] -- If e_val is in the edgeset
+    simp_all only [e_val_in_path] -- If e_val is in the edgeset of p
 
-    have edge_val_1_in_support : e_val_1 ∈ p.support := by -- this follow from the edge containing them being in p
+    have edge_val_1_in_support : e_val_1 ∈ p.support := by -- this follows from the edge containing these vertices (e_val) being in p
       exact p.fst_mem_support_of_mem_edges in_path
     have edge_val_2_in_support : e_val_2 ∈ p.support := by
       exact p.snd_mem_support_of_mem_edges in_path
 
-    have exists_getVert_1 : ∃ n, p.getVert n = e_val_1 ∧ n ≤ p.length  := by
-      rw [SimpleGraph.Walk.mem_support_iff_exists_getVert] at edge_val_1_in_support -- MAYBE MAKE THIS A LEMMA USED 3+ TIMES
-      obtain ⟨n, props⟩ := edge_val_1_in_support
-      obtain ⟨prop_1, prop_2⟩ := props
-      exact Filter.frequently_principal.mp fun a => a prop_1 prop_2
-    obtain ⟨n_1, n_1_props⟩ := exists_getVert_1
+    have exists_getVert_1 : ∃ n, p.getVert n = e_val_1 ∧ n ≤ p.length  := by -- Then there is an 'n' such that the nth vertexc of p is e_val_1 and n is less than p's lenght
+      rw [SimpleGraph.Walk.mem_support_iff_exists_getVert] at edge_val_1_in_support -- This lemma essentially says this
+      exact edge_val_1_in_support -- We just want to seperate it from edge_val_1_in_support
+
+    obtain ⟨n_1, n_1_props⟩ := exists_getVert_1 -- Let n_1 be said ℕ
     obtain ⟨n_1_prop_1, n_1_prop_2⟩ := n_1_props
 
-    have exists_getVert_2 : ∃ m, p.getVert m = e_val_2 ∧ m ≤ p.length := by
+    have exists_getVert_2 : ∃ m, p.getVert m = e_val_2 ∧ m ≤ p.length := by -- We do as we did for e_val_1 and name it n_2
       rw [SimpleGraph.Walk.mem_support_iff_exists_getVert] at edge_val_2_in_support
-      obtain ⟨n, props⟩ := edge_val_2_in_support
-      obtain ⟨prop_1, prop_2⟩ := props
-      exact Filter.frequently_principal.mp fun a => a prop_1 prop_2
+      exact edge_val_2_in_support
+
     obtain ⟨n_2, n_2_props⟩ := exists_getVert_2
     obtain ⟨n_2_prop_1, n_2_prop_2⟩ := n_2_props
 
-    have subgraph : G_e_removed ≤ G := by --needed in both sides of the by_cases below. it is trivial -- MIGHT NOT BE NEEDED
-      rw [G_e_removed_val]
-      exact SimpleGraph.deleteEdges_le (putEdgeInSet (Quot.mk (Sym2.Rel V) (e_val_1, e_val_2)))
-
     let val_1_first := n_1 < n_2
-    by_cases val_1_first -- suppose e_val_1 appears first in p
-    · rename_i val_1_comes_first
+    by_cases val_1_first
+    · rename_i val_1_comes_first -- suppose e_val_1 appears first in p, that is n_1 < n_2
       simp [val_1_first] at val_1_comes_first
-      let p_cut := SimpleGraph.Walk.takeUntil p e_val_1 edge_val_1_in_support
-      have edges_of_p_cut_in_G_e_removed : ∀ e, e ∈ p_cut.edges → e ∈ G_e_removed.edgeSet := by
+      let p_cut := SimpleGraph.Walk.takeUntil p e_val_1 edge_val_1_in_support -- Let p_cut be the p cut off at the first occurance of e_val_1 in it
+      have edges_of_p_cut_in_G_e_removed : ∀ e, e ∈ p_cut.edges → e ∈ G_e_removed.edgeSet := by -- I claim that every edge in p_cut is in G_e_removed
 
-        rw [G_e_removed_val] at v_in_G_1 empty_intersection e_num_not_in_G' e_num_not_in_G''
-
+        -- Obviously a trivial equality, but edges_of_p_cut_in_G_e_removed needs it so it can handle both the e_val_1 and 2 cases
         have e_val_1_eq_or : e_val_1 = e_val_1 ∨ e_val_1 = e_val_2 := by
           exact Or.symm (Or.inr rfl)
 
+        -- We reformat n_2_prop_1 edges_of_p_cut_in_G_e_removed, we essentially state it is the other endpoint of e_val than e_val_1
         have n_2_prop_1_formatted : p.getVert n_2 ∈ {e_val_1, e_val_2} \ putElemInSet e_val_1 := by
           unfold putElemInSet
-          simp_all only [Set.mem_diff, Set.mem_insert_iff, true_or, true_and]
-          by_contra not_in
+          simp_all only [Set.mem_diff, Set.mem_insert_iff]
+          by_contra not_in -- Suppose p.getVert n_2 (= e_val_2) is not in this set
+          -- Then e_val_1 = e_val_2 and thus e_val is a loop in a simple graph, a contradiction
           simp_all only [SimpleGraph.mem_edgeSet, Set.mem_singleton_iff, or_true, true_and, Decidable.not_not, SimpleGraph.irrefl]
 
+        rw [G_e_removed_val] at v_in_G_1 empty_intersection e_num_not_in_G' e_num_not_in_G''
         rw [G_e_removed_val]
 
+        -- This lemma can now close the goal with the information we have proved above
         exact edges_of_p_cut_in_G_e_removed edge_in_G rfl rfl rfl v_in_G_1 empty_intersection
                                             p_prop v_neq_e_val_1 v_neq_e_val_2 edge_val_1_in_support
                                             e_val_1_eq_or e_num_not_in_G' e_num_not_in_G'' v_not_e_num_reachable n_1_prop_1
                                             n_1_prop_2 n_2_prop_1_formatted n_2_prop_2 val_1_comes_first
 
+      -- As every edge of p_cut is in G_e_removed (A subgraph of G) there exists a copy of it in G_e_removed
       let p_cut_sub := SimpleGraph.Walk.transfer p_cut G_e_removed edges_of_p_cut_in_G_e_removed
 
+      -- v is in G_1 and e_val_1 is in G_1 by construction, so by nature of connected components they are reachable
       have e_val_1_v_reachable : G_e_removed.Reachable e_val_1 v := by
         exact SimpleGraph.Reachable.symm (SimpleGraph.ConnectedComponent.exact v_in_G_1)
 
+      -- As p_cut_sub is a walk from e_num to e_val_1 in G_e_removed, reachability follows from its existance
       have e_num_e_val_1_reachable : G_e_removed.Reachable e_num e_val_1 := by
         exact SimpleGraph.Walk.reachable p_cut_sub
 
-      have e_num_v_reachable : G_e_removed.Reachable e_num v := by -- Apply transitivity of reachabilty to the above
+      -- Apply transitivity of reachabilty to the pair shown above to get e_num and v reachability
+      have e_num_v_reachable : G_e_removed.Reachable e_num v := by
         exact SimpleGraph.Reachable.trans e_num_e_val_1_reachable e_val_1_v_reachable
 
       rw [G_e_removed_val] at e_num_v_reachable
       exact v_not_e_num_reachable e_num_v_reachable -- These two statements are opposites, so we have found a contradiction
-    · rename_i val_2_comes_first
+
+    · rename_i val_2_comes_first -- Suppose e_val_1 appears first in p, that is n_1 ¬< n_2
       simp_all only [val_1_first]
       rw [not_lt] at val_2_comes_first -- We see this case means that n_2 ≤ n_1
 
-      have val_2_comes_first : n_2 < n_1 := by -- I clain this implies they are less tham
+      have val_2_comes_first : n_2 < n_1 := by -- I claim this implies they are less tham
 
-        have n_1_neq_n_2 : n_1 ≠ n_2 := by --First, show they are not equal
-          by_contra are_eq
-          subst are_eq -- Suppose they are equal
+        have n_1_neq_n_2 : n_1 ≠ n_2 := by --First, we show they are not equal
+          by_contra are_eq -- Suppose they are equal
+          subst are_eq
 
           simp_all only [le_refl, SimpleGraph.mem_edgeSet, SimpleGraph.irrefl]
           -- We have their respective vertices are adjacent, but they are now the same vertices, a contradiction to looplessness of G
 
         exact Nat.lt_of_le_of_ne val_2_comes_first fun a => n_1_neq_n_2 (id (Eq.symm a))
 
-      let p_cut := SimpleGraph.Walk.takeUntil p e_val_2 edge_val_2_in_support
+      let p_cut := SimpleGraph.Walk.takeUntil p e_val_2 edge_val_2_in_support -- This section is the same as the case above but with e_val+i's and n_i's swapped
       have edges_of_p_cut_in_G_e_removed : ∀ e, e ∈ p_cut.edges → e ∈ G_e_removed.edgeSet := by
 
         rw [G_e_removed_val] at v_in_G_1 empty_intersection e_num_not_in_G' e_num_not_in_G''
@@ -1425,29 +1498,41 @@ lemma reachableToAllVerts {V : Type} [Finite V] [Nonempty V] {G G_e_removed: Sim
                                             e_val_2_eq_or e_num_not_in_G' e_num_not_in_G'' v_not_e_num_reachable n_2_prop_1
                                             n_2_prop_2 n_1_prop_1_formatted n_1_prop_2 val_2_comes_first
 
+      -- We now see that e_num must be in G''
       have e_num_in : e_num ∈ G''.verts := by
-        rw [G''_val]
+
+        -- As every edge of p_cut is in G_e_removed (A subgraph of G) there exists a copy of it in G_e_removed
         let p_cut_sub := SimpleGraph.Walk.transfer p_cut G_e_removed edges_of_p_cut_in_G_e_removed
+
+        -- p_cut_sub is a walk from e_num to e_val_2, we can reverse it and reachability follows
         have e_num_e_val_2_reachable : G_e_removed.Reachable e_val_2 e_num := by
           exact SimpleGraph.Walk.reachable (id p_cut_sub.reverse)
+
+        -- As these values are reachable, their connected components are equal
         have connComps_are_eq : G_e_removed.connectedComponentMk e_val_2 = G_e_removed.connectedComponentMk e_num := by
           exact SimpleGraph.ConnectedComponent.sound e_num_e_val_2_reachable
-        exact id (Eq.symm connComps_are_eq)
+
+        -- connComps_are_eq is equivalent to e_num being  in G'' as G'' = G_e_removed.connectedComponentMk e_val_2
+        rw [G''_val]
+        exact id (Eq.symm connComps_are_eq) -- So we are done
 
       rw [G''_val] at e_num_in
-      exact e_num_not_in_G'' e_num_in -- So e_num is both in and not in G''.verts, a contradiction
+      exact e_num_not_in_G'' e_num_in -- So e_num is both in and not in G''.verts by these two results, a contradiction
 
   · rename_i not_in_path
-    simp_all only [e_val_in_path] -- suppose e_val is not in p.edges
+    simp_all only [e_val_in_path] -- Suppose e_val is not in p.edges
 
-    let p_del := SimpleGraph.Walk.toDeleteEdge e_val p not_in_path
-    --
-    have e_num_v_reachable : (G.deleteEdges (putEdgeInSet s(e_val_1, e_val_2))).Reachable e_num v := by -- As there exists a walk between them, we have reachability from e_num to v
+    -- Then every edge of p is in G_e_removed as they on edge removed from G was e_val
+    let p_del := SimpleGraph.Walk.toDeleteEdge e_val p not_in_path -- Thus we can find a version of p in G_e_removed
+
+    -- As there exists a walk between them, we have reachability from e_num to v in G_e_removed
+    have e_num_v_reachable : (G.deleteEdges (putElemInSet s(e_val_1, e_val_2))).Reachable e_num v := by
       exact SimpleGraph.Walk.reachable p_del
 
-    exact v_not_e_num_reachable e_num_v_reachable
+    exact v_not_e_num_reachable e_num_v_reachable -- Again this contradicts our assumption, so we are done
 
-/--A proof that if an edge is in a graph G and in a subgraph of it then if the edge is not in a connected component of this subgraph its first vertex is also not in this connected component-/
+/--A proof that if an edge is in a graph G and in a subgraph of it then if the edge is not in a connected component of this subgraph its first vertex
+is also not in this connected component-/
 lemma edge_not_in_connComp_implies_vert_not_in {V : Type} [Finite V] [Nonempty V] {G G_e_removed: SimpleGraph V} {e_val_1 : V} {G' : G.Subgraph}
                                     (G'_val : G' = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_1)) {e_num_1 e_num_2 : V}
                                     (e_num_not_in_G' : s(e_num_1, e_num_2) ∉ G'.edgeSet) (e_num_in_G : s(e_num_1, e_num_2) ∈ G.edgeSet)
@@ -1488,14 +1573,15 @@ lemma edge_not_in_connComp_implies_vert_not_in {V : Type} [Finite V] [Nonempty V
     exact in_edgeSet -- in_edgeSet is exactly the adjacency condition that connectedComponentToSubGraph specifies, so the edge is in the edge set
   exact e_num_not_in_G' e_num_in_G'
 
-/--A proof that if (Fintype.ofFinite G_1.verts).card = 1 and (Fintype.ofFinite G_2.verts).card = 1 (Where they are defined as usual), there is a contradiction. A few other conditions are also assumed.-/
+/-- A proof that if (Fintype.ofFinite G_1.verts).card = 1 and (Fintype.ofFinite G_2.verts).card = 1 (Where they are defined as usual),
+there is a contradiction. A few other conditions are also assumed.-/
 lemma both_cards_eq_one_gives_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed: SimpleGraph V} (G_preconnected : G.Preconnected)
                  {e_val_1 e_val_2 : V} (e_val_edge : s(e_val_1, e_val_2) ∈ G.edgeSet) {G_1 G_2 : G.Subgraph}
                  (G_1_val : G_1 = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_1))
                  (G_2_val : G_2 = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_2))
                  (cards_eq_one : (Fintype.ofFinite G_1.verts).card = 1 ∧ (Fintype.ofFinite G_2.verts).card = 1)
                  (empty_intersection : G_1.verts ∩ G_2.verts = ∅)
-                 (G_e_removed_val : G_e_removed = G.deleteEdges (putEdgeInSet s(e_val_1, e_val_2)))
+                 (G_e_removed_val : G_e_removed = G.deleteEdges (putElemInSet s(e_val_1, e_val_2)))
                  (nonempty_G_e_removed : Nonempty G_e_removed.edgeSet )
                  (not_subset : ¬G.edgeSet ⊆ G_1.edgeSet ∪ G_2.edgeSet ∪ {s(e_val_1, e_val_2)})
                   : False := by
@@ -1672,7 +1758,7 @@ lemma both_cards_eq_one_gives_contradiction {V : Type} [Finite V] [Nonempty V] {
 
             have in_G_e_removed_edgeSet :  s(e_val_1, a) ∈ G_e_removed.edgeSet := by-- Second, we see s(e_val_1, a) is in G_e_removed
               rw [G_e_removed_val]
-              unfold putEdgeInSet
+              unfold putElemInSet
               rw [SimpleGraph.mem_edgeSet, SimpleGraph.deleteEdges_adj]
               -- As s(e_val_1, e_val_2) is the only edge deleted from G in G_e_removed, membership is equaivalent to
               -- not being s(e_val_1, e_val_2) and being an edge in G
@@ -1735,7 +1821,7 @@ lemma both_cards_eq_one_gives_contradiction {V : Type} [Finite V] [Nonempty V] {
 
             have in_G_e_removed_edgeSet :  s(e_val_2, a) ∈ G_e_removed.edgeSet := by
               rw [G_e_removed_val]
-              unfold putEdgeInSet
+              unfold putElemInSet
               rw [SimpleGraph.mem_edgeSet]
               rw [SimpleGraph.deleteEdges_adj]
               apply And.intro
@@ -1754,17 +1840,19 @@ lemma both_cards_eq_one_gives_contradiction {V : Type} [Finite V] [Nonempty V] {
         rw [← SimpleGraph.mem_neighborSet] at G_adj_getVert
         simp_all only [Set.mem_singleton_iff, true_or]
 
-  have triv_lt : p.length ≤ p.length := by
+  have triv_lt : p.length ≤ p.length := by -- Clearly p.length is less than or equal to itself
     exact Nat.le_refl p.length
-  apply all_getVert_e_val at triv_lt
-  simp [SimpleGraph.Walk.getVert_length] at triv_lt
-  simp_all only [ne_eq, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, false_and, Prod.swap_prod_mk, or_self,
-    not_false_eq_true]
 
-/-- A proof that if the cardinality of a connected component generated by the endpoint of an edge is not one, and the parent graph G is preconnected, then there is no edge not in the connected component-/
+  apply all_getVert_e_val at triv_lt -- So we can apply all_getVert_e_val at p.length to see p.getVert p.length is e_val_1 or e_val_22
+  simp [SimpleGraph.Walk.getVert_length] at triv_lt -- And p.getVert p.length is the last vertex in p, vert_1
+  simp_all only [ne_eq, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, false_and, Prod.swap_prod_mk]
+  -- We can simplify to see this contradicts vert_1_neq, so we are done
+
+/-- A proof that if the cardinality of a connected component generated by the endpoint of an edge is not one, the parent graph G is preconnected, and
+ the connected component is a connected component of a graph with this edge removed from this G, then there is a contradiction-/
 lemma have_edge_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed: SimpleGraph V} (G_preconnected : G.Preconnected)
                               {e_val_1 e_val_2 : V} (edge_in_G : s(e_val_1, e_val_2) ∈ G.edgeSet)
-                              (G_e_removed_val : G_e_removed = G.deleteEdges (putEdgeInSet s(e_val_1, e_val_2))) {G' G'' : G.Subgraph}
+                              (G_e_removed_val : G_e_removed = G.deleteEdges (putElemInSet s(e_val_1, e_val_2))) {G' G'' : G.Subgraph}
                               (G'_val : G' = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_1))
                               (G''_val : G'' = connectedComponentToSubGraph G (G_e_removed.connectedComponentMk e_val_2))
                               (empty_intersection : G'.verts ∩ G''.verts = ∅) (card_neq_one : (Fintype.ofFinite G'.verts).card ≠ 1)
@@ -1774,12 +1862,13 @@ lemma have_edge_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed:
 
   let G'_connComponent := (G_e_removed.connectedComponentMk e_val_1)
 
-  rw [G'_val, G''_val, G_e_removed_val] at empty_intersection
+  rw [G'_val, G''_val, G_e_removed_val] at empty_intersection -- We unfold the defintions at empty_intersection for usage below
 
+  -- First I claim that every element in G' is reachable from e_num_1, as long as it is not one of the e_val_i
   have e_1_G_e_removed_not_reachable : ∀ v, v ∈ G'.verts ∧ v ≠ e_val_1 ∧ v ≠ e_val_2 → G_e_removed.Reachable e_num_1 v := by
 
     have e_num_1_not_in_G' : e_num_1 ∉ G'.verts := by -- Required for below
-      exact edge_not_in_connComp_implies_vert_not_in G'_val e_num_not_in_G' e_num_in_G e_num_in_G_e_removed -- We use another result proving this
+      exact edge_not_in_connComp_implies_vert_not_in G'_val e_num_not_in_G' e_num_in_G e_num_in_G_e_removed -- We use another result proving exactly this
     have e_num_1_not_in_G'' : e_num_1 ∉ G''.verts := by
       exact edge_not_in_connComp_implies_vert_not_in G''_val e_num_not_in_G'' e_num_in_G e_num_in_G_e_removed
 
@@ -1787,8 +1876,11 @@ lemma have_edge_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed:
     rw [G'_val] at e_num_1_not_in_G'
     rw [G''_val, G_e_removed_val] at e_num_1_not_in_G''
     rw [G_e_removed_val, G'_val]
+
+    -- We can now use another lemma that gives the exact result we require
     exact reachableToAllVerts G_preconnected edge_in_G rfl rfl rfl empty_intersection e_num_1_not_in_G' e_num_1_not_in_G''
 
+  -- Similarly, I claim that every element in G' is reachable from e_num_2, as long as it is not one of the e_val_i
   have e_2_G_e_removed_not_reachable: ∀ v, v ∈ G'.verts ∧ v ≠ e_val_1 ∧ v ≠ e_val_2 → G_e_removed.Reachable e_num_2 v := by
 
     have edge_symm : s(e_num_1, e_num_2) = s(e_num_2, e_num_1) := by -- We swap the edges around so that we can use the same lemma as the e_num_1 case
@@ -1801,15 +1893,21 @@ lemma have_edge_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed:
     have e_num_2_not_in_G'' : e_num_2 ∉ G''.verts := by
       exact edge_not_in_connComp_implies_vert_not_in G''_val e_num_not_in_G'' e_num_in_G e_num_in_G_e_removed
 
-    rw [G_e_removed_val] at G'_val
+    rw [G_e_removed_val] at G'_val -- Sort out values for reachableToAllVerts to handle
     rw [G'_val] at e_num_2_not_in_G'
     rw [G''_val, G_e_removed_val] at e_num_2_not_in_G''
     rw [G_e_removed_val, G'_val]
+
+    -- And now we can use the same lemma as before
     exact reachableToAllVerts G_preconnected edge_in_G rfl rfl rfl empty_intersection e_num_2_not_in_G' e_num_2_not_in_G''
 
+  -- I now claim that the edge from e_num_1 to e_num_2 is in G'
   have e_num_in_G' : Quot.mk (Sym2.Rel V) (e_num_1, e_num_2) ∈ G'.edgeSet := by
 
+    -- First we must prove there exists a v satifying the conditions of e_1_G_e_removed_not_reachable/e_2_G_e_removed_not_reachable
     have exists_other_vert : ∃ v ∈ G'.verts, v ≠ e_val_1 ∧ v ≠ e_val_2 := by
+
+      -- First we show there is an element in G'.verts that is not in {e_val_1}
       have without_e_val_nonempty : Nonempty ↑(G'.verts \ (putElemInSet e_val_1)) := by
         unfold putElemInSet
         by_contra is_empty
@@ -1827,55 +1925,55 @@ lemma have_edge_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed:
         exact card_neq_one card_eq_one -- But it was an assumption that the cardinality was not one, so we are done
 
       simp_all only [nonempty_subtype]
-      obtain ⟨a, a_props⟩ := without_e_val_nonempty
+      obtain ⟨a, a_props⟩ := without_e_val_nonempty -- Let a be such an element of V
 
-      have a_neq_e_val_2 : a ≠ e_val_2 := by 
-        by_contra eq_val_2
+      have a_neq_e_val_2 : a ≠ e_val_2 := by -- I claim this v cannot be e_val_2
+        by_contra eq_val_2 -- If it is
 
-        rw [← G'_val] at a_props 
-        have a_in_G' : a ∈ G'.verts := by
+        rw [← G'_val] at a_props
+        have a_in_G' : a ∈ G'.verts := by -- Then e_val_2 is in G' by construction of a
           exact Set.mem_of_mem_diff a_props
 
-        have a_in_G'' : a ∈ G''.verts := by
+        have a_in_G'' : a ∈ G''.verts := by -- Clearly e_val_2 is also in G'', as it was constructed to include it
           rw [eq_val_2, G''_val]
           rfl
-        
-        have a_in_inter : a ∈ G'.verts ∩ G''.verts := by
+
+        have a_in_inter : a ∈ G'.verts ∩ G''.verts := by -- So a is in the intersection
           exact Set.mem_inter a_in_G' a_in_G''
 
-        rw [← G_e_removed_val, ← G'_val, ← G''_val] at empty_intersection 
+        rw [← G_e_removed_val, ← G'_val, ← G''_val] at empty_intersection
         rw [empty_intersection] at a_in_inter
         exact a_in_inter -- So a is in empty set, a contradiction
-      
-      simp_all only [ne_eq]
+
       obtain ⟨left, right⟩ := a_props
       apply Exists.intro
-      · apply And.intro
+      · apply And.intro -- Split the and in the goal into two seperate proofs
         · exact left
-        · simp_all only [not_false_eq_true, and_true]
-          exact right -- As the set in which such a v would be in is nonempty, it must exist
+        · simp_all only [ne_eq, not_false_eq_true, and_true] -- We see it is not e_val_2 by a_neq_e_val_2
+          exact right -- And right is exactly what we need
 
-    obtain ⟨v, v_props⟩ := exists_other_vert
+    obtain ⟨v, v_props⟩ := exists_other_vert -- Let v be such a vertex (One such that we can apply e_i_G_e_removed_not_reachable)
 
-    have num_1_in_connComp : e_num_1 ∈ G'_connComponent := by
+    have num_1_in_connComp : e_num_1 ∈ G'_connComponent := by -- I claim we can now prove e_num_1 is in the connected component equivalent to G'
 
+      -- Firstly we see e_val_1 is reachable from e_num_1 in G_e_removed
       have e_1_e_val_1_reachable : G_e_removed.Reachable e_num_1 e_val_1 := by
 
-        have e_1_v_reachable : G_e_removed.Reachable e_num_1 v  := by
+        have e_1_v_reachable : G_e_removed.Reachable e_num_1 v  := by -- As we showed v has the required properties, v is reachable from e_num_1
           exact e_1_G_e_removed_not_reachable v v_props
 
         obtain ⟨v_in_verts, v_neq_e_val_1⟩ := v_props
 
-        have v_e_val_1_reachable : G_e_removed.Reachable v e_val_1 := by
+        have v_e_val_1_reachable : G_e_removed.Reachable v e_val_1 := by -- As v is also in G', it is reachable to all vertices in G', namely e_val_1
           rw [G'_val] at v_in_verts
           exact SimpleGraph.ConnectedComponent.exact v_in_verts
 
-        exact SimpleGraph.Reachable.trans e_1_v_reachable v_e_val_1_reachable
+        exact SimpleGraph.Reachable.trans e_1_v_reachable v_e_val_1_reachable -- We can combine these two reachabilities to close our goal
 
       -- As it is reachable from e_val_1, it is in the connected component
       exact reachableByCompImpliesconnComp rfl (id (SimpleGraph.Reachable.symm e_1_e_val_1_reachable))
 
-    have num_2_in_connComp : e_num_2 ∈ G'_connComponent := by
+    have num_2_in_connComp : e_num_2 ∈ G'_connComponent := by -- We can also see e_num_2 is in the same component by the same proof as above (just for e_num_2)
 
       have e_2_e_val_1_reachable : G_e_removed.Reachable e_num_2 e_val_1 := by
 
@@ -1892,18 +1990,17 @@ lemma have_edge_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed:
 
       exact reachableByCompImpliesconnComp rfl (id (SimpleGraph.Reachable.symm e_2_e_val_1_reachable))
 
-    rw [SimpleGraph.mem_edgeSet] at edge_in_G
-
     rw [SimpleGraph.Subgraph.mem_edgeSet] -- We see our goal is to show adjacency in G_e_removed
 
-    have in_edgeSet : (G.Adj e_num_1 e_num_2) ∧ e_num_1 ∈ G'_connComponent ∧ e_num_2 ∈ G'_connComponent := by -- Follows from collecting the statements above and edge_in_G
+    -- Follows from collecting the statements above and edge_in_G
+    have in_edgeSet : (G.Adj e_num_1 e_num_2) ∧ e_num_1 ∈ G'_connComponent ∧ e_num_2 ∈ G'_connComponent := by
       rw [← SimpleGraph.mem_edgeSet]
       simp_all only [true_and]
 
     rw [G'_val]
-    exact in_edgeSet
+    exact in_edgeSet -- We see we have found exactly out goal
 
-  exact e_num_not_in_G' e_num_in_G'
+  exact e_num_not_in_G' e_num_in_G' -- So there is an edge both in G' and not in it, a contradiction
 
 /-- The first part of the proof that (1,2,3,4) → (5). If a graph G on a finite and nonempty vertex set is a tree, then we have |E(G)| = |V(G)| - 1 -/
 theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (G_is_tree : isTree G) (nonempty: Nonempty V):
@@ -1923,31 +2020,35 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
   --| cons h p ih => cases i <;> simp [getVert, ih, Nat.succ_lt_succ_iff]
 
   | hz     =>
-  by_contra h -- Suppose |E (G)| is non empty
+  by_contra h -- Suppose |E (G)| does not have cardinality 0
 
   apply Nat.exists_eq_succ_of_ne_zero at h -- Then |E (G)| has value succ k for some k ∈ ℕ
   simp_all only [Nat.succ_eq_add_one, Nat.exists_eq_add_one] -- Then |E (G)| > 0
 
   unfold Fintype.card at h
   unfold Finset.univ at h
-
-  simp_all only [Finset.card_pos]
-  apply Finset.Nonempty.exists_mem at h
+  simp_all only [Finset.card_pos] -- As its cardainlity is +ve, it is nonempty
+  apply Finset.Nonempty.exists_mem at h -- So there exists an edge in it
   simp_all only [Subtype.exists]
 
-  obtain ⟨w, h⟩ := h
-  obtain ⟨w_1, h⟩ := h
-  have nonzero:  (Fintype.ofFinite V).card ≠ 0 := by
-    simp_all only [ne_eq, Fintype.card_ne_zero, not_false_eq_true]
+  obtain ⟨w, h⟩ := h  -- Let w be such an edge
+  obtain ⟨w_in_G, h⟩ := h -- And obtain its properties
 
-  have ind_hyp : (Fintype.ofFinite V).card = 1 := by  -- Clearly this holds, as |V (T)| = 1 is what I am assuming for the zero section of the induction,
-    exact nat_minus_one_eq_zero_implies_eq_one hnV nonzero
-  exact oneVertexbutEdgeIsFalse G w w_1 ind_hyp
+  -- Clearly this holds, as |V (T)| = 1 is what I am assuming for the zero section of the induction, but we must prove it again in this form
+  have ind_hyp : (Fintype.ofFinite V).card = 1 := by
 
-  -- Now must prove it holds for |V (G)| − 1 = n + 1 if it holds for |V (G)| − 1 = n
+    have nonzero : (Fintype.ofFinite V).card ≠ 0 := by -- The cardinality is not zero as we have 'nonempty' telling us V is nonempty
+      simp_all only [ne_eq, Fintype.card_ne_zero, not_false_eq_true]
+
+    exact nat_minus_one_eq_zero_implies_eq_one hnV nonzero -- Thus we can apply this lemma to close the goal
+
+  -- As we have an edge but only one vertex, there is a contradiction, as edges must contain two distinct vertices
+  exact oneVertexbutEdgeIsFalse G w w_in_G ind_hyp
+
+  -- Now must prove it holds for |V (G)| − 1 = n + 1 if it holds for |V (G)| − 1 = n (CHANGE)
   | hi y hy=>
-
   have NonemptyEdgeset : (Nonempty G.edgeSet) := by -- We need the edgeset to be nonempty, as G is connected and we have more than one vertex, this is true
+
     have card_not_zero : (Fintype.ofFinite V).card > 1 := by -- this follows from us being in the inductive step
       exact Nat.lt_of_sub_eq_succ hnV
 
@@ -2031,10 +2132,10 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
 
   obtain ⟨e_val, e_prop⟩ := exist_elem_in_G
 
-  have three_result : (¬(G.deleteEdges (putEdgeInSet (e_val))).Connected) := by -- we acquire the result that 3 already holding gives us
+  have three_result : (¬(G.deleteEdges (putElemInSet (e_val))).Connected) := by -- we acquire the result that 3 already holding gives us
     exact three_implies_G_without_e_disconnected G e_val -- ie By (3), G − e is disconnected.
 
-  let G_e_removed := G.deleteEdges (putEdgeInSet (e_val)) -- this is G without the edge e
+  let G_e_removed := G.deleteEdges (putElemInSet (e_val)) -- this is G without the edge e
 
   obtain ⟨e_val_1, e_val_2⟩ := e_val
   let e_val := Quot.mk (Sym2.Rel V) (e_val_1, e_val_2) -- redefine e_val for usage later (Otherwise lean gets confused due to the nature of obtain)
@@ -2051,23 +2152,27 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
     unfold isTree at G_is_tree -- as G is a tree we see it is connected and acylic
     simp [G_is_tree] -- G being connected is exactly what we need
 
-  have G_1_isTree : isTree G_1.coe := by
-    have connected : G_1.coe.Connected := by
-      exact connected_component_coe_is_connected e_val_1 e_prop rfl
+  have G_1_isTree : isTree G_1.coe := by -- Need to obtain the same properties for G_1
 
+    have connected : G_1.coe.Connected := by -- We apply other lemmas to acquire these properties
+      exact connected_component_coe_is_connected e_val_1 e_prop rfl
     have acylic : isAcyclic G_1.coe := by
       exact conn_comp_acyclic G_is_tree e_prop rfl
+
     unfold isTree
-    exact ⟨connected, acylic⟩
+    exact ⟨connected, acylic⟩ -- And then combine them to close the goal
 
   have G_2_isTree : isTree G_2.coe := by
-    have needed_equality : G_e_removed = G.deleteEdges (putEdgeInSet ( s(e_val_2,e_val_1) ) ) := by
+
+    -- We see that we can also define G_e_removed with the edge values swapped around
+    have needed_equality : G_e_removed = G.deleteEdges (putElemInSet ( s(e_val_2,e_val_1) ) ) := by
       rw [Sym2.eq_swap]
-    have h_e : s(e_val_2,e_val_1) ∈ G.edgeSet := by
+
+    have h_e : s(e_val_2,e_val_1) ∈ G.edgeSet := by -- And this edge is in G by symmetry of edges
       rw [Sym2.eq_swap]
       exact e_prop
 
-    have connected : G_2.coe.Connected := by
+    have connected : G_2.coe.Connected := by -- Now we use the same same method as we did with G_1
       exact connected_component_coe_is_connected e_val_2 h_e needed_equality
 
     have acylic : isAcyclic G_2.coe := by
@@ -2079,10 +2184,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
   have empty_intersection : G_1.verts ∩ G_2.verts = ∅ := by -- Needed for many results below, so is proved outside of them
     exact conn_comp_empty_intersection G_is_acylic e_prop G_e_removed rfl rfl rfl -- use a proof I have written elsewhere
 
-  -- from notes: Since each of them has fewer vertices than T, we know that |E(T1)| = |V (T1)| − 1 & |E(T2)| = |V (T2)| − 1.
-  -- from notes: We also know that |V (T)| = |V (T1)| + |V (T2)| and |E(T)| = |E(T1)| + |E(T2)| + 1.
-
-  have h_G_1 : (Fintype.ofFinite ↑G_1.edgeSet).card = (Fintype.ofFinite ↑G_1.verts).card - 1 := by
+  have h_G_1 : (Fintype.ofFinite ↑G_1.edgeSet).card = (Fintype.ofFinite ↑G_1.verts).card - 1 := by -- We will acquire this by applying the inductive hypothesis
     have less_than_y : (Fintype.ofFinite ↑G_1.verts).card - 1 ≤ y := by
       by_contra not_leq
       apply Nat.gt_of_not_le at not_leq -- We see (Fintype.ofFinite ↑G_1.verts).card - 1 > y if the result doesnt hold
@@ -2114,7 +2216,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
 
         simp_all only [Set.mem_empty_iff_false] -- But this is empty, contradiction
 
-      exact e_val_not_in (eq_V e_val_2) -- yet e_val_1 is of type V, so we have acontradiction to eq_V's statement
+      exact e_val_not_in (eq_V e_val_2) -- yet e_val_1 is of type V, so we have a contradiction to eq_V's statement
 
 
 
@@ -2160,8 +2262,8 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
 
   -- This is needed in the vert and edge set cardinality statements that are proved below, thus it is defined outside of both of them
   have edgeSet_eq_union : G.edgeSet = G_1.edgeSet ∪  G_2.edgeSet ∪ {e_val}:= by
-    have subset : G.edgeSet ⊆ G_1.edgeSet ∪ G_2.edgeSet ∪ (putEdgeInSet e_val) := by
-      unfold putEdgeInSet
+    have subset : G.edgeSet ⊆ G_1.edgeSet ∪ G_2.edgeSet ∪ (putElemInSet e_val) := by
+      unfold putElemInSet
       by_contra not_subset
 
       have exists_edge : ∃ e : G.edgeSet, (↑e ∉ G_1.edgeSet) ∧ (↑e ∉ G_2.edgeSet) ∧ (↑e ≠ e_val) := by
@@ -2169,9 +2271,9 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
         simp_all only [not_exists, not_and] -- We see this means that one of the results must fail. WLOG this is chosen to be (↑e ≠ e_val)
 
         -- The no_such_edge holding allows us to contradict our assumption not_subset
-        have subset_holds : G.edgeSet ⊆ G_1.edgeSet ∪ G_2.edgeSet ∪ (putEdgeInSet e_val) := by
-          unfold putEdgeInSet
-          have in_G_implies_in_union : ∀ e ∈ G.edgeSet, e ∈ G_1.edgeSet ∪ G_2.edgeSet ∪ (putEdgeInSet e_val) := by
+        have subset_holds : G.edgeSet ⊆ G_1.edgeSet ∪ G_2.edgeSet ∪ (putElemInSet e_val) := by
+          unfold putElemInSet
+          have in_G_implies_in_union : ∀ e ∈ G.edgeSet, e ∈ G_1.edgeSet ∪ G_2.edgeSet ∪ (putElemInSet e_val) := by
             intro edge edge_prop
 
             let in_G1 := edge ∈ G_1.edgeSet
@@ -2179,7 +2281,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
             · rename_i edge_in_G1 -- edge ∈ G_1.edgeSet
               simp_all only [in_G1]
               rw [Set.union_assoc] -- Need to rewrite goal to use Set.mem_union_left
-              exact Set.mem_union_left (G_2.edgeSet ∪ putEdgeInSet e_val) edge_in_G1 -- It is in one part of the union so is in the whole union, proving the goal
+              exact Set.mem_union_left (G_2.edgeSet ∪ putElemInSet e_val) edge_in_G1 -- It is in one part of the union so is in the whole union, proving the goal
 
             · rename_i edge_not_in_G1 -- edge ∉ G_1.edgeSet
               simp_all only [in_G1]
@@ -2189,7 +2291,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
               · rename_i edge_in_G2 -- edge ∈ G_2.edgeSet
                 simp_all only [in_G2]
                 rw [Set.union_comm G_1.edgeSet G_2.edgeSet, Set.union_assoc] -- Need to rewrite goal to use Set.mem_union_left
-                exact Set.mem_union_left (G_1.edgeSet ∪ putEdgeInSet e_val) edge_in_G2 -- Then same as in G1 case
+                exact Set.mem_union_left (G_1.edgeSet ∪ putElemInSet e_val) edge_in_G2 -- Then same as in G1 case
 
               · rename_i edge_not_in_G2 -- edge ∉ G_2.edgeSet
                 simp_all only [in_G2]
@@ -2216,32 +2318,33 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
       obtain ⟨edge, edge_in_G⟩ := edge -- Also seperate its value and its membership to G
       obtain ⟨e_1, e_2⟩ := edge -- Let e_1 and e_2 be the endpoints of this edge
 
-      have G_preconnected : G.Preconnected := by exact G_is_connected.preconnected
-      unfold SimpleGraph.Preconnected at G_preconnected
+      have G_preconnected : G.Preconnected := by exact G_is_connected.preconnected -- G is preconnected as that is a requirement for its connectivity
+      unfold SimpleGraph.Preconnected at G_preconnected -- We see preconnected means that all vertices of V are reachable from one and other in G
 
       let cards_eq_one := (Fintype.ofFinite G_1.verts).card = 1 ∧ (Fintype.ofFinite G_2.verts).card = 1
       by_cases cards_eq_one
-      · rename_i both_eq_one
+      · rename_i both_eq_one -- If |V(G_1)| = |V(G_2)| = 1
 
-        have empty_edgeSet : Nonempty G_e_removed.edgeSet := by
+        have nonempty_edgeSet : Nonempty G_e_removed.edgeSet := by -- I claim we know there must be an edge in G_e_removed
 
-          have e_1_e_2_is_in : s(e_1, e_2) ∈ G_e_removed.edgeSet := by
-            by_contra not_in
-            rw [SimpleGraph.edgeSet_deleteEdges] at not_in
+          have e_1_e_2_is_in : s(e_1, e_2) ∈ G_e_removed.edgeSet := by -- In particular I claim that s(e_1, e_2) is such an edge
+            by_contra not_in -- Suppose this edge is not in the edge set
+            rw [SimpleGraph.edgeSet_deleteEdges] at not_in -- So it is not in G.edgeSet without s(e_val_1, e_val_2)
 
-            have in_e_val_set : s(e_1, e_2) ∈ putEdgeInSet s(e_val_1, e_val_2) := by
+            have in_e_val_set : s(e_1, e_2) ∈ putElemInSet s(e_val_1, e_val_2) := by -- As s(e_1, e_2) is in G.edgeSet, it must've been in {s(e_val_1, e_val_2)}
               simp_all only [Set.mem_diff, true_and, not_not]
 
-            exact not_e_val in_e_val_set
+            exact not_e_val in_e_val_set -- So s(e_1, e_2) = s(e_val_1, e_val_2) but not_e_val says the opposite
 
           rw [nonempty_subtype]
-          exact Exists.intro s(e_1, e_2) e_1_e_2_is_in
+          exact Exists.intro s(e_1, e_2) e_1_e_2_is_in -- So there is an edge in G_e_removed.edgeSet, thus it is nonempty
 
-        exact both_cards_eq_one_gives_contradiction G_preconnected e_prop rfl rfl both_eq_one empty_intersection rfl empty_edgeSet not_subset
-      · rename_i one_neq_one
+        -- We can then use this other lemma which will give the contradiction we need
+        exact both_cards_eq_one_gives_contradiction G_preconnected e_prop rfl rfl both_eq_one empty_intersection rfl nonempty_edgeSet not_subset
+      · rename_i one_neq_one -- If If |V(G_1)| ≠ 1 or |V(G_2)| ≠ 1
         simp_all only [cards_eq_one]
-
-        have one_component_card_neq_one : (Fintype.ofFinite G_1.verts).card ≠ 1 ∨ (Fintype.ofFinite G_2.verts).card ≠ 1 := by -- Rewrite the statement in a manner where case analysis is possible
+        -- Rewrite the statement in a manner where case analysis is possible
+        have one_component_card_neq_one : (Fintype.ofFinite G_1.verts).card ≠ 1 ∨ (Fintype.ofFinite G_2.verts).card ≠ 1 := by
           exact (Decidable.not_and_iff_or_not ((Fintype.ofFinite G_1.verts).card = 1)
                 ((Fintype.ofFinite G_2.verts).card = 1)).mp one_neq_one
 
@@ -2262,7 +2365,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
           -- In order to use have_edge_contradiction and close the goal, we must sort out some of our results to have e_val_2 be the first vertex in e_val
           rw [Set.inter_comm] at empty_intersection
 
-          have deleteEdges_eq : G_e_removed = G.deleteEdges (putEdgeInSet s(e_val_2, e_val_1)) := by -- We gain a new defintion for G_e_removed
+          have deleteEdges_eq : G_e_removed = G.deleteEdges (putElemInSet s(e_val_2, e_val_1)) := by -- We gain a new defintion for G_e_removed
             simp_all [Sym2.eq_swap]
           have edge_eq : Quot.mk (Sym2.Rel V) (e_val_1, e_val_2) = Quot.mk (Sym2.Rel V) (e_val_2, e_val_1) := by -- & See s(e_val_1,e_val_2) = s(e_val_2,e_val_1)
             simp_all [Sym2.eq_swap]
@@ -2270,7 +2373,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
 
 
           -- We see we are able to swap the edge values around within G_1's defintition (simp does not do this)
-          have G_1_eq : G_1 = connectedComponentToSubGraph G ↑((G.deleteEdges (putEdgeInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_1) := by
+          have G_1_eq : G_1 = connectedComponentToSubGraph G ↑((G.deleteEdges (putElemInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_1) := by
 
             -- This equalitiy is trivial due to deleteEdges_eq and edge_eq though it must be asserted so it can be applied
             have triv_eq : G_1 = connectedComponentToSubGraph G ↑(G_e_removed.connectedComponentMk e_val_1) := by
@@ -2279,7 +2382,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
             rw [triv_eq, deleteEdges_eq]-- We rewrite with triv_eq's equality, and then deleteEdges_eq within that, and we are done
 
           -- This is the same as the above but for G_2
-          have G_2_eq : G_2 = connectedComponentToSubGraph G ↑((G.deleteEdges (putEdgeInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_2) := by
+          have G_2_eq : G_2 = connectedComponentToSubGraph G ↑((G.deleteEdges (putElemInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_2) := by
 
             have triv_eq : G_2 = connectedComponentToSubGraph G ↑(G_e_removed.connectedComponentMk e_val_2) := by
               exact rfl
@@ -2287,11 +2390,11 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
             rw [triv_eq, deleteEdges_eq]
 
           -- As G_1 and G_2 equals themselves under this new ordering, naturally they have the same vertex & edge sets
-          have G_1_eq_edges : G_1.edgeSet = (connectedComponentToSubGraph G ↑((G.deleteEdges (putEdgeInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_1)).edgeSet := by
+          have G_1_eq_edges : G_1.edgeSet = (connectedComponentToSubGraph G ↑((G.deleteEdges (putElemInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_1)).edgeSet := by
             exact congrArg SimpleGraph.Subgraph.edgeSet G_1_eq
-          have G_2_eq_verts : G_2.verts = (connectedComponentToSubGraph G ↑((G.deleteEdges (putEdgeInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_2)).verts := by
+          have G_2_eq_verts : G_2.verts = (connectedComponentToSubGraph G ↑((G.deleteEdges (putElemInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_2)).verts := by
             exact congrArg SimpleGraph.Subgraph.verts G_2_eq
-          have G_2_eq_edges : G_2.edgeSet = (connectedComponentToSubGraph G ↑((G.deleteEdges (putEdgeInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_2)).edgeSet := by
+          have G_2_eq_edges : G_2.edgeSet = (connectedComponentToSubGraph G ↑((G.deleteEdges (putElemInSet s(e_val_2, e_val_1))).connectedComponentMk e_val_2)).edgeSet := by
             exact congrArg SimpleGraph.Subgraph.edgeSet G_2_eq
 
           -- Apply these results at other results so they can be used for have_edge_contradiction
@@ -2303,25 +2406,25 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
           -- And have_edge_contradiction closes the goal
           exact have_edge_contradiction G_preconnected e_prop rfl rfl rfl empty_intersection G_2_verts_neq_1 not_in_G_2 not_in_G_1 edge_in_G e_1_e_2_edge_in_G_e_removed
 
-    have superset : G.edgeSet ⊇ G_1.edgeSet ∪ G_2.edgeSet ∪ (putEdgeInSet e_val) := by
-      simp [Set.union_subset_iff]
+    have superset : G.edgeSet ⊇ G_1.edgeSet ∪ G_2.edgeSet ∪ (putElemInSet e_val) := by -- I claim that every element in this union is in G.edgeSet
+      simp [Set.union_subset_iff] -- We must prove that each part of the union is a subset on its own
       apply And.intro -- if we prove each part of the union is a subset, then the union is a subset
       · apply And.intro
-        · exact SimpleGraph.Subgraph.edgeSet_subset G_1
+        · exact SimpleGraph.Subgraph.edgeSet_subset G_1 -- Both of these edgeSet are subsets as G_1 and G_2 are subgraphs
         · exact SimpleGraph.Subgraph.edgeSet_subset G_2
-      · unfold putEdgeInSet
-        have e_val_in_edgeSet : e_val ∈ G.edgeSet := by
+      · unfold putElemInSet
+        have e_val_in_edgeSet : e_val ∈ G.edgeSet := by -- e_val is the only element in putElemInSet e_val, and it in G
           exact e_prop
-        exact Set.singleton_subset_iff.mpr e_prop
+        exact Set.singleton_subset_iff.mpr e_prop -- So we are done
 
-    exact Set.Subset.antisymm subset superset
+    exact Set.Subset.antisymm subset superset -- As it is a subset and superset, the two sets are equal
 
-  have vertSetEquality : (Fintype.ofFinite V).card = (Fintype.ofFinite ↑G_1.verts).card + (Fintype.ofFinite ↑G_2.verts).card := by
+  have vertSetEquality : (Fintype.ofFinite V).card = (Fintype.ofFinite ↑G_1.verts).card + (Fintype.ofFinite ↑G_2.verts).card := by -- We can now show that |V(G)| = |V(G_1)| + |V(G_2)|
 
-    have h_alpha : ∀ v : V, v ∈ (G_1.verts ∪ G_2.verts) := by
-      by_contra not_in_a_component
+    have h_alpha : ∀ v : V, v ∈ (G_1.verts ∪ G_2.verts) := by -- First, we must show that every element of V is in either G_1 or G_2
+      by_contra not_in_a_component -- Suppose there is a vertex not in either
       rw [not_forall] at not_in_a_component
-      obtain ⟨v, v_prop⟩ := not_in_a_component
+      obtain ⟨v, v_prop⟩ := not_in_a_component -- Let v be said vertex
 
       have not_in_either : v ∉ G_1.verts ∧ v ∉ G_2.verts := by -- v_prop is equivalent to it being in neither set
         rw [Set.mem_union, not_or] at v_prop
@@ -2330,76 +2433,74 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
       let not_in_an_edge := IsEmpty (G.neighborSet v) -- v is either in an edge of v or not. If is in in an edge
 
       by_cases not_in_an_edge
-
       · rename_i holds -- Suppose there is no edge containing v
         simp_all only [not_in_an_edge]
-        have not_reachable : ¬ G.Reachable v e_val_1 := by -- then clearly e_val is not reachable
-          by_contra if_reachable
-          rw [SimpleGraph.reachable_iff_nonempty_univ] at if_reachable
-          obtain ⟨p, p_prop⟩ := if_reachable
-          let v_1 := secondVertexInWalk G p
-          have in_neighborSet : v_1 ∈ G.neighborSet v := by
+        have not_reachable : ¬ G.Reachable v e_val_1 := by -- then e_val_1 is not reachable
+          by_contra if_reachable -- Suppose it was reachable
+          rw [SimpleGraph.reachable_iff_nonempty_univ] at if_reachable -- Then there is a walk between them
+          obtain ⟨p, p_prop⟩ := if_reachable -- Let p be this walk
+          let v_1 := secondVertexInWalk G p -- Let v_1 be the second vertex in this walk
 
-            have are_Adjacent : G.Adj v v_1 := by
-
-              have neq : v ≠ e_val_1 := by
-                by_contra eq
-
-                have not_reachable : ¬ G.Reachable v e_val_1 := by
-                  subst eq
-                  simp [isEmpty_subtype, SimpleGraph.mem_neighborSet] at holds
+          have in_neighborSet : v_1 ∈ G.neighborSet v := by -- Clearly it is neighbouring v as they are adjacent vertices in the walk p
+            have are_Adjacent : G.Adj v v_1 := by -- To obtain this adjacency is a bit harder though
+              have neq : v ≠ e_val_1 := by -- We must show that the end and start points are not the same so we can show p is not trivial
+                by_contra eq -- Suppose  v = e_val_1
+                have not_reachable : ¬ G.Reachable v e_val_1 := by -- We can see that G.Reachable v e_val_1 does not hold
+                  subst eq -- This is equivalent to G.Reachable v v
+                  simp [isEmpty_subtype, SimpleGraph.mem_neighborSet] at holds -- The rest follows from v having an empty neighbourset
                   simp [← SimpleGraph.mem_edgeSet] at holds
                   simp_all only [SimpleGraph.mem_edgeSet]
 
-                have is_reachable : G.Reachable v e_val_1 := by-- we changed this earlier so need to reaffirm it for the contradiction
+                have is_reachable : G.Reachable v e_val_1 := by -- But they are reachable as p exists
                   exact SimpleGraph.Walk.reachable p
 
-                exact not_reachable is_reachable
+                exact not_reachable is_reachable -- So we get a contradiction
+
               have zero_lt_walk_length : 0 < p.length := by
 
-                have not_nil : ¬ p.Nil := by
+                have not_nil : ¬ p.Nil := by -- p is not nil as its endpoints are not equal
                   exact SimpleGraph.Walk.not_nil_of_ne neq
 
-                exact SimpleGraph.Walk.not_nil_iff_lt_length.mp not_nil
+                exact SimpleGraph.Walk.not_nil_iff_lt_length.mp not_nil -- thus as it is not nil it does not have trivial length
 
-              have get_vert_adj : G.Adj (p.getVert 0) (p.getVert 1) := by
+              have get_vert_adj : G.Adj (p.getVert 0) (p.getVert 1) := by -- So the first and second vertices are adjacent
                 exact SimpleGraph.Walk.adj_getVert_succ p zero_lt_walk_length
 
-              rw [SimpleGraph.Walk.getVert_zero] at get_vert_adj
+              rw [SimpleGraph.Walk.getVert_zero] at get_vert_adj -- Which is equivalent to our goal
               exact get_vert_adj
 
-            exact are_Adjacent
+            exact are_Adjacent -- Adjacency is equivalent to neightbour set
 
-          have not_isEmpty : ¬ IsEmpty (G.neighborSet v) := by
+          have not_isEmpty : ¬ IsEmpty (G.neighborSet v) := by -- Thus the neighbourset of v is nonempty as v_1 is in it
             rw [not_isEmpty_iff]
             rw [isEmpty_subtype] at holds
             exact False.elim (holds v_1 in_neighborSet)
 
-          exact not_isEmpty holds
+          exact not_isEmpty holds -- So the neighbour set of v is empty and also nonempty, a contradiction
 
         have G_is_preconnected : G.Preconnected := by exact G_is_connected.preconnected
 
         unfold SimpleGraph.Preconnected at G_is_preconnected
-        exact not_reachable (G_is_preconnected v e_val_1)
+        exact not_reachable (G_is_preconnected v e_val_1) -- G is preconnected so every pair of vertices in it is reachable, but not_reachable contradicts with with v and e_val_1
 
       · rename_i doesnt_hold
-        simp_all only [not_in_an_edge]
+        simp_all only [not_in_an_edge] -- Suppose there is an edge containing v
         rw [not_isEmpty_iff] at doesnt_hold
 
-        have exists_other_vert : ∃ a, a ∈ ↑(G.neighborSet v) := by
+        have exists_other_vert : ∃ a, a ∈ ↑(G.neighborSet v) := by -- Then there exists a vertex neighbouring v
           exact nonempty_subtype.mp doesnt_hold
 
-        obtain ⟨u, u_prop⟩ := exists_other_vert
+        obtain ⟨u, u_prop⟩ := exists_other_vert -- LEt u be set vertex
         unfold SimpleGraph.neighborSet at u_prop
 
-        have v_u_Adj : G.Adj v u := by
+        have v_u_Adj : G.Adj v u := by -- Then clearly v and u are adjacent
           exact u_prop
 
-        rw [← SimpleGraph.mem_edgeSet] at v_u_Adj
+        rw [← SimpleGraph.mem_edgeSet] at v_u_Adj -- And their edge is in the edgeset
 
         have in_union_or : s(v, u) ∈ G_1.edgeSet ∨ s(v, u) ∈ G_2.edgeSet ∨ s(v, u) = e_val := by -- This follows from edgeSet_eq_union and v_u_Adj
-          simp_all only [Set.union_singleton, Set.mem_insert_iff, Sym2.eq, Sym2.rel_iff', e_val]
-          cases v_u_Adj with
+          simp_all only [Set.union_singleton, Set.mem_insert_iff, Sym2.eq, Sym2.rel_iff', e_val] -- First we simplify
+          cases v_u_Adj with -- Then each case can be solved trivially
           | inl h_1 =>
             cases h_1 with
             | inl h_2 => simp_all only [true_or, or_true]
@@ -2410,31 +2511,29 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
             | inr h_3 => simp_all only [true_or, or_true]
 
 
-        cases' in_union_or with h_1 h_2
-
-        · have in_G_1 : v ∈ G_1.verts := by
+        cases' in_union_or with h_1 h_2 -- Let us split up in_union_or into each part of the or statement
+        · -- If s(v, u) ∈ G_1.edgeSet
+          have in_G_1 : v ∈ G_1.verts := by -- Then v is in G_1 due to its edge membership
             exact G_1.edge_vert h_1
-          simp_all only [not_true_eq_false]
-
+          simp_all only [not_true_eq_false] -- This contradicts not_in_either
         · cases' h_2 with h_2 h_3
-
-          · have in_G_2: v ∈ G_2.verts := by
+          · -- If s(v, u) ∈ G_1.edgeSet
+            have in_G_2: v ∈ G_2.verts := by -- Then v is in G_2 due to its edge membership
               exact G_2.edge_vert h_2
-            simp_all only [not_true_eq_false]
+            simp_all only [not_true_eq_false] -- This contradicts not_in_either
 
-          · have in_G_1_or_G_2 : v ∈ G_1.verts ∨ v ∈ G_2.verts := by
-              have v_eq_or : v = e_val_1 ∨ v = e_val_2 := by
+          · -- If s(v, u) = e_val
+            have in_G_1_or_G_2 : v ∈ G_1.verts ∨ v ∈ G_2.verts := by
+              have v_eq_or : v = e_val_1 ∨ v = e_val_2 := by -- Then v is one of the endpoints of the edge, that is e_val_1 or 2
                 rw [Sym2.eq, Sym2.rel_iff',Prod.mk.injEq, Prod.swap_prod_mk] at h_3
                 rw [Prod.mk.injEq] at h_3
                 cases h_3 with
                 | inl h_2 => simp_all only [true_or]
                 | inr h_4 => simp_all only [or_true]
 
-              exact Or.imp (congrArg G_e_removed.connectedComponentMk) (congrArg G_e_removed.connectedComponentMk) v_eq_or
+              exact Or.imp (congrArg G_e_removed.connectedComponentMk) (congrArg G_e_removed.connectedComponentMk) v_eq_or -- e_val_i is in G_i, so the or holds
 
-            exact v_prop in_G_1_or_G_2
-
-        -- all of which imply the vertex is in one of our connected component done
+            exact v_prop in_G_1_or_G_2 -- And this or statement is the oposite of v_prop
 
     let union := G_1.verts ∪ G_2.verts -- I have to turn union into a single set object otherwise Lean gets mad at me in the next line
     have eq_to_union_card : (Fintype.ofFinite V).card = (Fintype.ofFinite (union)).card := by -- We see that the cardinality of V and the union of G_1 and G_2's vertices are the same
@@ -2443,31 +2542,34 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
       -- This a proof that if all of the elements of type V are in some set, then the set and the type have the same cardinality
       -- We have the requirement for this in h_alpha
 
-    let intersection := G_1.verts ∩ G_2.verts
-
-    have empty_intersection : G_1.verts ∩ G_2.verts = ∅ := by
+    have empty_intersection : G_1.verts ∩ G_2.verts = ∅ := by -- We see that the intersection of both connected componenets is empty as a result of this lemma
       exact conn_comp_empty_intersection G_is_acylic e_prop G_e_removed rfl rfl rfl
 
-    have card_eq  : (Fintype.ofFinite ↑G_1.verts).card + (Fintype.ofFinite ↑G_2.verts).card = (Fintype.ofFinite union).card := by
-      exact union_minus_intersection_eq_sum_of_sets G_1.verts G_2.verts (id (Eq.symm empty_intersection))
+    -- We also claim that the cardinality of the union is exactly the sum of the cardinalities (as the intersection is empty)
+    have card_eq : (Fintype.ofFinite ↑G_1.verts).card + (Fintype.ofFinite ↑G_2.verts).card = (Fintype.ofFinite union).card := by
+      exact union_minus_intersection_eq_sum_of_sets G_1.verts G_2.verts (id (Eq.symm empty_intersection)) -- To see this we apply a lemma defined elsewhere
 
-    rw [card_eq]
-    exact eq_to_union_card
+    rw [card_eq] -- We substitue this into our goal
+    exact eq_to_union_card -- And see that this is exactly eq_to_union_card
 
+  -- We will now prove a similar equality for the edgesets of G, G_1, and G_2
   have edgeSetEquality : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite ↑G_1.edgeSet).card + (Fintype.ofFinite ↑G_2.edgeSet).card + 1 := by
 
-    have size_equality : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite G_1.edgeSet).card + (Fintype.ofFinite G_2.edgeSet).card + (Fintype.ofFinite (putEdgeInSet e_val)).card:= by
+    -- We prove this first then that (Fintype.ofFinite (putElemInSet e_val)).card = 1
+    have size_equality : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite G_1.edgeSet).card + (Fintype.ofFinite G_2.edgeSet).card
+                                                              + (Fintype.ofFinite (putElemInSet e_val)).card:= by
 
-      have first_eq : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite ↑(G_1.edgeSet ∪  G_2.edgeSet ∪ {e_val})).card := by
+      have first_eq : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite ↑(G_1.edgeSet ∪  G_2.edgeSet ∪ {e_val})).card := by -- First we show that
         exact my_card_congr' (Fintype.ofFinite ↑G.edgeSet) (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet ∪ {e_val})) (congrArg Set.Elem edgeSet_eq_union)
+        -- As we previously showed the edgeset of g and G_1.edgeSet ∪ G_2.edgeSet ∪ {e_val}, this follows from congruency of cardinalities
       rw [first_eq]
 
       have first_disjoint : ∅ = (G_1.edgeSet ∪ G_2.edgeSet) ∩ {e_val} := by
-        by_contra not_disjoint
+        by_contra not_disjoint -- Suppose the intersection of these is not empty
 
-        -- doesnt work if i dont put putEdgeInSet in the result statement, thus has to be there
-        have exists_common_edge : ∃ e, e ∈ (G_1.edgeSet ∪ G_2.edgeSet) ∧ e ∈ putEdgeInSet e_val := by-- If they are not disjoint they have a common elements
-          unfold putEdgeInSet
+        -- doesnt work if i dont put putElemInSet in the result statement, thus has to be there
+        have exists_common_edge : ∃ e, e ∈ (G_1.edgeSet ∪ G_2.edgeSet) ∧ e ∈ putElemInSet e_val := by-- If they are not disjoint they have a common element
+          unfold putElemInSet
 
           have nonempty : Nonempty ↑((G_1.edgeSet ∪ G_2.edgeSet) ∩ {e_val}) := by -- We see the intersection is nonempty
             exact Set.nonempty_iff_ne_empty'.mpr fun a => not_disjoint (id (Eq.symm a))
@@ -2478,7 +2580,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
         obtain ⟨e_prop_1, e_prop_2⟩ := e_prop
 
         have e_eq_e_val : e = e_val := by -- as it is in {e_val}, clearly e is e_val
-          unfold putEdgeInSet at e_prop_2
+          unfold putElemInSet at e_prop_2
           exact e_prop_2
         subst e_eq_e_val -- We then subst e_val for e
 
@@ -2507,8 +2609,8 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
         exact in_inter
 
       -- We can rewrite part of the cardinality equality, by consequence of the lemma union_minus_intersection_eq_sum_of_sets and the disjointness shown above
-      have second_eq : (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet ∪ {e_val})).card = (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet)).card + (Fintype.ofFinite ↑(putEdgeInSet e_val)).card := by
-        unfold putEdgeInSet
+      have second_eq : (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet ∪ {e_val})).card = (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet)).card + (Fintype.ofFinite ↑(putElemInSet e_val)).card := by
+        unfold putElemInSet
         have nonempty_sym2 : Nonempty (Sym2 V) := by exact Nonempty.intro e_val
         rw [union_minus_intersection_eq_sum_of_sets (G_1.edgeSet ∪ G_2.edgeSet) {e_val} first_disjoint]
       rw [second_eq] -- change the goal to reflect this
@@ -2548,9 +2650,9 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
         rw [union_minus_intersection_eq_sum_of_sets G_1.edgeSet G_2.edgeSet second_disjoint]
       rw [third_eq]
 
-    -- The cardinality of putEdgeInSet e_val is 1 as it contains only e_val
-    have single_eq_one : (Fintype.ofFinite (putEdgeInSet e_val)).card = 1 := by
-      unfold putEdgeInSet
+    -- The cardinality of putElemInSet e_val is 1 as it contains only e_val
+    have single_eq_one : (Fintype.ofFinite (putElemInSet e_val)).card = 1 := by
+      unfold putElemInSet
       simp [Fintype.card_unique]
 
     rw [single_eq_one] at size_equality -- substitute single_eq_one in, and we are done
@@ -2595,10 +2697,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
   rw [hnV] at edgeSetEquality -- And we see |E (G)| = |V (G)|, so are done
   exact edgeSetEquality
 
-lemma edgeInCycleMeansEdgeInGraph {V : Type} [Finite V] (G : SimpleGraph V) {v : V} (p : G.Walk v v) {e : Sym2 V} (e_in_path : e ∈ p.edges)
-  : e ∈ G.edgeSet := by
-  exact SimpleGraph.Walk.edges_subset_edgeSet p e_in_path
-
+/-- A proof that if you delete an edge from a graph then the delete edge is not in the remaining graph -/
 lemma deletingEdgeMeansNotInEdgeSet {V : Type} [Finite V] (deletedEdges : Set (Sym2 V)) {G G' : SimpleGraph V} (h: G' = G.deleteEdges deletedEdges) {e : Sym2 V} (e_member : e ∈ deletedEdges)
 : e ∉ G'.edgeSet := by
   by_contra contra_h -- suppose it is in this edgeset
@@ -2611,21 +2710,28 @@ lemma deletingEdgeMeansNotInEdgeSet {V : Type} [Finite V] (deletedEdges : Set (S
   obtain ⟨_, fact⟩ := contra_h
   exact fact e_member -- but being in deletedEdges was an assumption, so we have a contradiction
 
+/-- A proof that a lack of membership to the edgeSet of a graph is equivalent to a lack of membership to the edgeFinset of the same graph -/
 lemma not_in_FinsetEdgeSet_equals_not_in_edgeSet {V : Type} [Finite V] (G : SimpleGraph V) [Fintype G.edgeSet] (e : Sym2 V): e ∉ G.edgeSet ↔ e ∉ G.edgeFinset := by
   rw [Set.mem_toFinset]
 
+/-- A proof that if two finsets are not equal and one is a subset of the other then the cardinality of the subset is less than that of the parent finset -/
 lemma subset_and_neq_means_card_le {U : Type} [Finite U] (A B : Finset U) (subset : A ⊆ B) (not_equal : A ≠ B) : (A.card < B.card):= by
-  have A_strict_subset : A ⊂ B := by
+  have A_strict_subset : A ⊂ B := by -- The subsets is proper as they are not equal
     exact HasSubset.Subset.ssubset_of_ne subset not_equal
-  exact Finset.card_lt_card A_strict_subset
+  exact Finset.card_lt_card A_strict_subset -- Finset cardinality has a lemma that then closes the goal
 
+/-- A proof that if one subset is a subset of another and there is an element in the parent set that is not in the subset, the two sets are not equal-/
 lemma Finset_subset_and_has_less_elems_implies_not_equal {U : Type} (A B : Finset U) (subset : A ⊆ B) (x : U) (h1 : x ∈ B) (h2 : x ∉ A) : A ≠ B := by
   by_contra equal -- suppose A = B
   subst equal -- Then x is in A and not in A
   exact h2 (subset (subset (subset h1))) -- contradiction, so we are done
 
-lemma subgraphImpliesLeqEdges {V : Type} [Finite V] (deletedEdges : Set (Sym2 V)) {G G' : SimpleGraph V} (G_finiteEdgeSet : Fintype G.edgeSet) (h : G' = G.deleteEdges deletedEdges) (subGraph: G' ≤ G) (G'_finiteEdgeSet : Fintype G'.edgeSet)  (subset_of_G_edges : deletedEdges ⊆ G.edgeSet) (h1 : Nonempty deletedEdges)
-: (G'.edgeFinset).card < (G.edgeFinset).card := by
+/-- A proof that if one graph is a subgraph of another and it is gained by deleting a nonempty set edges from the parent graph, then the
+cardinality of the parent graph's edgeset is greater than that of the subgraph-/
+lemma subgraphImpliesLeqEdges {V : Type} [Finite V] (deletedEdges : Set (Sym2 V)) {G G' : SimpleGraph V} (G_finiteEdgeSet : Fintype G.edgeSet)
+                              (h : G' = G.deleteEdges deletedEdges) (subGraph: G' ≤ G) (G'_finiteEdgeSet : Fintype G'.edgeSet)
+                              (subset_of_G_edges : deletedEdges ⊆ G.edgeSet) (h1 : Nonempty deletedEdges)
+                              : (G'.edgeFinset).card < (G.edgeFinset).card := by
   simp_all only [nonempty_subtype] -- there is an element in deletedEdges (as Nonempty)
   obtain ⟨deletedEdge_edge, deletedEdge_prop⟩ := h1
 
@@ -2643,22 +2749,20 @@ lemma subgraphImpliesLeqEdges {V : Type} [Finite V] (deletedEdges : Set (Sym2 V)
     rw [SimpleGraph.edgeSet_subset_edgeSet] -- and our subgraph assumption is definitionally equivalent to the edgesets being subsets
     simp_all only [Set.mem_toFinset]
 
-  have edgeFinsets_neq : G.edgeFinset ≠ G'.edgeFinset := by
+  have edgeFinsets_neq : G.edgeFinset ≠ G'.edgeFinset := by -- The edge finsets are not equal by the exact result of another lemma
     exact Ne.symm (Finset_subset_and_has_less_elems_implies_not_equal G'.edgeFinset G.edgeFinset
                    G'_edgeFinset_is_subset deletedEdge_edge edge_in_G edge_not_in_G')
 
+  -- And a lemma written above closes the goal using the other results we have proved
   exact subset_and_neq_means_card_le G'.edgeFinset G.edgeFinset G'_edgeFinset_is_subset
         (id (Ne.symm edgeFinsets_neq))
 
+/-- A proof that casting a finset to a set and then back again does not change the set -/
 lemma SetToFinsetToSetEqSet {V : Type} (set : Set V) [Fintype set] : set.toFinset.toSet = set := by
   exact Set.coe_toFinset set
 
-lemma equalSetsHaveEqualCard {V : Type} [Finite V] (set1 set2 : Set (Sym2 V)) (equality : set1 = set2)
-  : (Fintype.ofFinite set1).card = (Fintype.ofFinite set2).card := by
-  subst equality
-  simp_all only
-
-theorem five_implies_onetwothreefour_acyclic_part1 {V : Type} [Finite V] (G : SimpleGraph V) (g_is_connected : G.Connected) (edge_vert_equality: (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1) :
+/-- Part of the proof of (5) → (1,2,3,4). It is a proof that a connected graph with one less edge than vertices is acyclic -/
+theorem five_implies_onetwothreefour_acyclic_part {V : Type} [Finite V] (G : SimpleGraph V) (g_is_connected : G.Connected) (edge_vert_equality: (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1) :
   (isAcyclic G) := by
 
   by_contra not_acyclic-- suppose that G is not acyclic, that is it has a cycle
@@ -2729,7 +2833,6 @@ theorem five_implies_onetwothreefour_acyclic_part1 {V : Type} [Finite V] (G : Si
       -- this is a result of a lemma I have proved which states that if a graph is a subgraph of another graph gained by deleting at least one edge,
       -- and both their number of edges are fintypes, then the number of edges in the subgraph's edgeFinset is less than that of the parent graph
 
-    -- POSSIBLE IMPROVEMENT, MAKE THIS RESULT (WHICH IS USED TWICE) A LEMMA
     -- We see that the edgeFinset cardinality is the same as the cardinality of the Fintype gained from casting edgeFinset to a set, then a finset, then a fintype
     have G_0_edgeFinset_card_eq_edgeSet_card : G_0.edgeFinset.card = (Fintype.ofFinite G_0.edgeFinset.toSet).card  := by
       unfold SimpleGraph.edgeFinset -- Unfold the defintion of edgeFinset in SimpleGraph.Finite
@@ -2742,7 +2845,8 @@ theorem five_implies_onetwothreefour_acyclic_part1 {V : Type} [Finite V] (G : Si
     -- Want to show these two cardinalities are equal to the < statement we found can be chaned to the form of the goal
     have G_0_edgeFinset_card_eq_edgeSet_card :  (Fintype.ofFinite G_0.edgeSet).card = G_0.edgeFinset.card := by
       rw [G_0_edgeFinset_card_eq_edgeSet_card] -- substitute in the equality proved with this
-      exact equalSetsHaveEqualCard G_0.edgeSet G_0.edgeFinset.toSet G_0_eSet_toFinset_toSet_eq_eSet -- This is a lemma proving this result on any two finite sets that are shown two be equal
+      exact my_card_congr' (Fintype.ofFinite ↑G_0.edgeSet) (Fintype.ofFinite ↑↑G_0.edgeFinset)
+          (congrArg Set.Elem G_0_eSet_toFinset_toSet_eq_eSet)-- This is a lemma proving this result on any two finite sets that are shown two be equal
 
     have G_edgeFinset_card_eq_edgeSet_card : G.edgeFinset.card = (Fintype.ofFinite G.edgeFinset.toSet).card  := by -- apply exact symmetry to proof results found for G_0
       unfold SimpleGraph.edgeFinset
@@ -2753,8 +2857,8 @@ theorem five_implies_onetwothreefour_acyclic_part1 {V : Type} [Finite V] (G : Si
 
     have G_edgeFinset_card_eq_edgeSet_card :  (Fintype.ofFinite G.edgeSet).card = G.edgeFinset.card := by
       rw [G_edgeFinset_card_eq_edgeSet_card]
-      exact equalSetsHaveEqualCard G.edgeSet G.edgeFinset.toSet G_eSet_toFinset_toSet_eq_eSet
-
+      exact  my_card_congr' (Fintype.ofFinite ↑G.edgeSet) (Fintype.ofFinite ↑↑G.edgeFinset)
+          (congrArg Set.Elem G_eSet_toFinset_toSet_eq_eSet)
     simp_all only [Set.toFinset_card] -- Using the equality of the desired set cardinalities and the cardinality of edgeFinset.card we see we have found the desired statemnt
 
   have edge_vert_equality_G_0 : (Fintype.ofFinite G_0.edgeSet).card = (Fintype.ofFinite V).card - 1 := by -- We know that |E(G0)| = |V (G0)| − 1 as G0 is a tree, and thus we can apply our previous work
@@ -2769,10 +2873,11 @@ theorem five_implies_onetwothreefour_acyclic_part1 {V : Type} [Finite V] (G : Si
 
   simp_all only [lt_self_iff_false, G_0] --In other words, G is acyclic and we are done (for this part)
 
-theorem five_implies_onetwothreefour_part2 {V : Type} [Finite V] (G : SimpleGraph V) (g_is_connected : G.Connected) (edge_vert_equality: (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1) :
+/-- The proof of (5) → (1,2,3,4). If a graph G on a finite vertex set is connected and has one less edge than it does vertices, then it is a tree -/
+theorem five_implies_onetwothreefour {V : Type} [Finite V] (G : SimpleGraph V) (g_is_connected : G.Connected) (edge_vert_equality: (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1) :
   (isTree G) := by
   -- only need show G is Acylcic as we are given G is connected and G being a tree requires it to be Acylic and Connected
-  have G_Acyclic : isAcyclic G := by exact five_implies_onetwothreefour_acyclic_part1 G g_is_connected edge_vert_equality -- acyclic-ness is the result that part 1 proves
+  have G_Acyclic : isAcyclic G := by exact five_implies_onetwothreefour_acyclic_part G g_is_connected edge_vert_equality -- acyclic-ness is proved here
   have G_Acylic_and_Connected : G.Connected ∧ (isAcyclic G) := by exact ⟨g_is_connected, G_Acyclic⟩ -- This is just ∧ of two statements we have
   unfold isTree -- we see this is exactly the defintion of a tree, so are done
   exact G_Acylic_and_Connected
