@@ -826,8 +826,8 @@ lemma subgraph_edgeSet_card_eq_coe_card {V : Type} [Finite V] {G : SimpleGraph V
       exact id (Eq.symm Hcoe)
 
 lemma NAME_LATER {V : Type} [Finite V] {y : ℕ} (hy : ∀ m ≤ y,  ∀ (a b : Set V), ∅ = a ∩ b → (Fintype.ofFinite ↑(a ∪ b)).card = m →
-                 (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = m) {a b : Set V} 
-                 (empty_inter : ∅ = a ∩ b) (hu : (Fintype.ofFinite ↑(a ∪ b)).card = y + 1) {u :V} (u_prop : u ∈ a ∨ u ∈ b) 
+                 (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = m) {a b : Set V}
+                 (empty_inter : ∅ = a ∩ b) (hu : (Fintype.ofFinite ↑(a ∪ b)).card = y + 1) {u :V} (u_prop : u ∈ a ∨ u ∈ b)
                  (in_a_not_b : u ∈ a ∧ u ∉ b) : (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = y + 1 := by
   obtain ⟨in_a, not_in_b⟩ := in_a_not_b
   have card_union_without_u_eq_minus_one : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card = (Fintype.ofFinite ↑(a ∪ b)).card - 1 := by
@@ -1031,7 +1031,7 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V]
     rw [← cards_eq] at hu
     rw [Set.inter_comm a b] at empty_inter
     symm at u_prop
-    
+
     let card_b_plus_card_a_eq_y_plus_one := NAME_LATER hy empty_inter hu u_prop in_b_not_a
     rw [add_comm]
     exact card_b_plus_card_a_eq_y_plus_one
@@ -2402,7 +2402,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
   -- As we have an edge but only one vertex, there is a contradiction, as edges must contain two distinct vertices
   exact oneVertexbutEdgeIsFalse G w w_in_G ind_hyp
 
-  -- Now must prove it holds for |V (G)| − 1 = n + 1 if it holds for |V (G)| − 1 = n (CHANGE)
+  -- Now must prove it holds for |V (G)| − 1 = n + 1 if it holds for |V (G)| − 1 = n
   | hi y hy=>
 
   have NonemptyEdgeset : (Nonempty G.edgeSet) := by -- We need the edgeset to be nonempty, as G is connected and we have more than one vertex, this is true
@@ -3219,8 +3219,8 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
       have second_eq : (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet ∪ {e_val})).card = (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet)).card + (Fintype.ofFinite ↑(putElemInSet e_val)).card := by
         unfold putElemInSet
         have nonempty_sym2 : Nonempty (Sym2 V) := by exact Nonempty.intro e_val
-        rw [union_minus_intersection_eq_sum_of_sets (G_1.edgeSet ∪ G_2.edgeSet) {e_val} first_disjoint]
-      rw [second_eq] -- change the goal to reflect this
+        rw [union_minus_intersectchangeion_eq_sum_of_sets (G_1.edgeSet ∪ G_2.edgeSet) {e_val} first_disjoint]
+      rw [second_eq] --  the goal to reflect this
 
       have second_disjoint : ∅ = G_1.edgeSet ∩ G_2.edgeSet := by
         by_contra not_disjoint -- Suppose the intersection is nonempty
