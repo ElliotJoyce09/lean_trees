@@ -1,8 +1,10 @@
 import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Hasse
+import Mathlib.Combinatorics.SimpleGraph.Acyclic
 import Mathlib.Logic.Basic
 import Mathlib.Order.Cover
+import Mathlib.Data.Set.Basic
 
 namespace trees
 
@@ -113,36 +115,95 @@ theorem emptyGraphToPathGraphOnTwoVertices : SimpleGraph.pathGraph 2 = addEdgeTo
 def isMaximallyAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
   ¬hasACycle G ∧ (∀ e ∈ nonEdgeSet G, hasACycle (addEdgeToGraph G e))
 
-def threeVariableXOR (p q r : Prop) : Prop :=
-  (p ∨ q ∨ r) ∧ ¬((p ∧ q) ∨ (q ∧ r) ∨ (r ∧ p)) ∧ ¬(p ∧ q ∧ r)
-
-def P3 : SimpleGraph (Fin 3) :=
-  { Adj := fun (x y : Fin 3) => y - x = 1 ∨ x - y = 1}
-
-def isP3 (G : SimpleGraph (Fin 3)) : Prop :=
-  ∀ (u v w : Fin 3), threeVariableXOR (¬ G.Adj u v) (¬ G.Adj u w) (¬ G.Adj v w)
-
-theorem P3IsP3 : isP3 P3 := by
-  intro u v w
+theorem maximallyAcyclicP3 : isMaximallyAcyclic (SimpleGraph.pathGraph 3) := by
   apply And.intro
-  rw [← not_and_or, ← not_and_or]
-  simp [P3]
-  intros hp hq
-  cases' hp with hpp hpq
-  rw [] at hpp --need to get u - v = 1 to be u = 1 + v
+  unfold hasACycle
+  simp
+  intro x h
+  intro i
+  fin_cases x
+  simp at h
+  cases' i with isACircuit tailContainsNoDuplicates
+  rw [@SimpleGraph.Walk.isCircuit_def] at isACircuit
+  simp at isACircuit
+  obtain ⟨isATrail, isNotAPath⟩ := isACircuit
+  rw [@SimpleGraph.Walk.isTrail_def] at isATrail
+  rw [← @SimpleGraph.Walk.isPath_iff_eq_nil] at isNotAPath
+  rw [← @SimpleGraph.Walk.isTrail_def] at isATrail
+  -- we use the fact that it is a trail to show no edges are repeated
+  have noEdgesRepeated : ∀ e ∈ h.edges, Multiset.count e h.edges = 1 := by
+    intro h1 h2
+    refine Multiset.count_eq_one_of_mem ?d h2
+    simp
+    exact isATrail.edges_nodup
+  -- we use the fact it is not a path to show a vertex has to be repeated
+  have aVertexRepeated : ∃ v : (Fin 3), Multiset.count v h.support > 1 := by
+    contrapose! isNotAPath
+    simp at isNotAPath
+    rw [@SimpleGraph.Walk.isPath_def]
+    exact List.nodup_iff_count_le_one.mpr isNotAPath
+  -- NEED TO SHOW THAT A VERTEX REPEATED IMPLIES AN EDGE IS REPEATED ON A PATH GRAPH ON 3 VERTICIES
+  -- COULD TRY THAT IF IT IS IN THE SUPPORT OF A WALK, THEN THERE IS AN EDGE GOING TO/FROM IT
+  obtain ⟨vertex, vertexIsRepeated⟩ := aVertexRepeated
 
-
-  -- if this hold we then have a cycle, so i mean what do i do now???
   sorry
 
-theorem maximallyAcyclicP3 : isMaximallyAcyclic P3 := by
-  apply And.intro
-
-
-  sorry
-
-def isUniquePath {V : Type} (u v : V) (G: SimpleGraph V) : Prop :=
-  ∀ (a b : G.Path u v), a = b
+def isUniquePath {V : Type} (G: SimpleGraph V) : Prop :=
+  ∀ (u v : V) (p q : G.Path u v), p = q
 
 def Tree {V: Type} (G : SimpleGraph V) : Prop :=
-  G.Connected ∧ isAcyclic G
+  G.Connected ∧ G.IsAcyclic
+
+theorem pathImpliesWalk {V : Type} (G : SimpleGraph V) {u v : V} (p : G.Path u v) : ∃ (w : G.Walk u v), w = p := by
+  simp
+
+theorem treeImpliesTwoVerticiesConnectedByUniquePath {V : Type} (G : SimpleGraph V) : Tree G → ∀ (u v : V), isUniquePath G := by
+  unfold Tree
+  unfold isUniquePath
+  intro tree
+  cases' tree with connected acyclic
+  apply SimpleGraph.isAcyclic_iff_path_unique.mp at acyclic
+  intros u v
+  exact acyclic
+
+-- IF ANY TWO VERTICIES IN A GRAPH ARE CONNECTED BY A UNIQUE PATH THEN IT IS A TREE
+-- If any two vertices in T are connected by a path, T is connected. Since the path is unique, T is acyclic. Therefore, T is a tree.
+theorem twoVerticesConnectedByUniquePathImpliesTree {V : Type} (G : SimpleGraph V) [h : Nonempty V]: (∀ u v : V, isUniquePath G) → Tree G := by
+  unfold isUniquePath
+  unfold Tree
+  intros uniquePath
+  apply And.intro
+  rw [@SimpleGraph.connected_iff]
+  apply And.intro
+  unfold SimpleGraph.Preconnected
+  unfold SimpleGraph.Reachable
+  let ⟨x⟩ := h
+  intros u v
+
+  sorry
+  exact h
+  rw [SimpleGraph.isAcyclic_iff_path_unique]
+  intro v w p q
+  simp_all only [Subtype.forall, Subtype.mk.injEq]
+  obtain ⟨val, property⟩ := p
+  obtain ⟨val_1, property_1⟩ := q
+  simp_all only [Subtype.mk.injEq]
+  apply uniquePath
+  · exact v
+  · exact v
+  · simp_all only
+  · simp_all only
+
+/-- A trivial function that takes an element of some Type V and returns a Set of Type V containing only that element-/
+def putElemInSet {V : Type} (u : V) : Set V :=
+  {u}
+
+/-- This is a stand in for the actual proof, which is not assigned to me-/
+theorem treeIsMinimallyConnected {V : Type} {G : SimpleGraph V} (graphIsTree : G.IsTree) : ∀ e ∈ G.edgeSet, G.Connected ∧ ¬(G.deleteEdges (putElemInSet (e))).Connected := by
+  intros edge edgeInEdgeSet
+  have graphIsConnected : G.Connected := graphIsTree.1
+  have graphWithoutEdgeIsDisconnected : ¬(G.deleteEdges (putElemInSet edge)).Connected := by
+    apply Aesop.BuiltinRules.not_intro
+    intro h
+    sorry
+  exact ⟨graphIsConnected, graphWithoutEdgeIsDisconnected⟩
