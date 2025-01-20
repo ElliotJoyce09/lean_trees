@@ -172,7 +172,7 @@ lemma edgeConversionG'CoeToG {V : Type} {G : SimpleGraph V} (G' : G.Subgraph) (x
   simp_all only [SimpleGraph.Subgraph.coe_adj, SimpleGraph.Subgraph.coe_adj_sub] -- Follows from application of some results that already exist for Subgraph.coe
 
 /-- A function that takes a sink vertex of G' and an element of V and maps them to either the sink vertex if v is not in the vert. set of G' or to itself if it is -/
-def map_to_membership_or_sink {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (sink : ↑G'.verts) (v : V) : G'.verts := by
+noncomputable def map_to_membership_or_sink {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (sink : ↑G'.verts) (v : V) : G'.verts := by
   let h := v ∈ G'.verts
   by_cases h
   · rename_i h_1
@@ -181,7 +181,7 @@ def map_to_membership_or_sink {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (
   · exact sink
 
 /-- A homomorphism from the spanning coe of a subgraph of G to the coe of the same subgraph -/
-def spanningCoeToCoeHom {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (sink : ↑G'.verts): G'.spanningCoe →g G'.coe  where
+noncomputable def spanningCoeToCoeHom {V : Type} {G : SimpleGraph V} {G' : G.Subgraph} (sink : ↑G'.verts): G'.spanningCoe →g G'.coe  where
   toFun := fun v => map_to_membership_or_sink sink v -- Maps v to the corresponding element of G'.verts according to map_to_membership_or_sink
   map_rel' := by -- This is a proof that adjacency holding in G'.spanningCoe means it holds for the mapped vertices in G'.coe
     intro a b adj_in_spanning -- Let a and b be two elements of V adjacent in G'.spanningCoe.Adj
