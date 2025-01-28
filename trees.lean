@@ -1,3 +1,4 @@
+.
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Data.Fintype.Basic
