@@ -825,7 +825,7 @@ lemma subgraph_edgeSet_card_eq_coe_card {V : Type} [Finite V] {G : SimpleGraph V
       rw [G_1_coe_card_one] at Hcoe
       exact id (Eq.symm Hcoe)
 
-lemma NAME_LATER {V : Type} [Finite V] {y : ℕ} (hy : ∀ m ≤ y,  ∀ (a b : Set V), ∅ = a ∩ b → (Fintype.ofFinite ↑(a ∪ b)).card = m →
+lemma split_up_card_of_union {V : Type} [Finite V] {y : ℕ} (hy : ∀ m ≤ y,  ∀ (a b : Set V), ∅ = a ∩ b → (Fintype.ofFinite ↑(a ∪ b)).card = m →
                  (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = m) {a b : Set V}
                  (empty_inter : ∅ = a ∩ b) (hu : (Fintype.ofFinite ↑(a ∪ b)).card = y + 1) {u :V} (u_prop : u ∈ a ∨ u ∈ b)
                  (in_a_not_b : u ∈ a ∧ u ∉ b) : (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = y + 1 := by
@@ -1022,7 +1022,7 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V]
 
   cases only_in_one with -- As u is either in a and not in b or vice versa, we can split the or statement into two cases
   | inl in_a_not_b =>
-    exact NAME_LATER hy empty_inter hu u_prop in_a_not_b
+    exact split_up_card_of_union hy empty_inter hu u_prop in_a_not_b
   | inr in_b_not_a =>
     -- Sort out symmetries of properties so that we can apply the same lemma, this is all trivial
     have cards_eq : (Fintype.ofFinite ↑(b ∪ a)).card = (Fintype.ofFinite ↑(a ∪ b)).card := by
@@ -1032,7 +1032,7 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V]
     rw [Set.inter_comm a b] at empty_inter
     symm at u_prop
 
-    let card_b_plus_card_a_eq_y_plus_one := NAME_LATER hy empty_inter hu u_prop in_b_not_a
+    let card_b_plus_card_a_eq_y_plus_one := split_up_card_of_union hy empty_inter hu u_prop in_b_not_a
     rw [add_comm]
     exact card_b_plus_card_a_eq_y_plus_one
 
