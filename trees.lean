@@ -2,7 +2,7 @@ import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Combinatorics.SimpleGraph.Walk
 import Mathlib.Data.Fintype.Basic
-import Mathlib.Tactic
+import Mathlib.Tactic -- Don't think is needed need???? but curtrently used for interval_cases
 import Mathlib.Combinatorics.SimpleGraph.Subgraph
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Combinatorics.SimpleGraph.Finite
@@ -157,6 +157,7 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
     obtain ⟨leaf, leaf_prop⟩ := G_has_a_leaf
     rw [(Fintype.ofFinite ↑(G.neighborSet leaf)).card_eq_one_iff] at leaf_prop
     obtain ⟨x,x_is_unique⟩ := leaf_prop
+
     let G' := subgraph_without_vertex_set G {leaf}
     -- let H := G'.deleteVerts {leaf}
     -- The graph of the leaf is just the leaf vertex, which is G - G'
@@ -174,6 +175,7 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
       -- The leaf is trivially in the Vertex set
       have leaf_in_V : leaf ∈ type_to_set V := by
         exact trivial
+      
       have V_without_leaf_card_eq_minus_one : (Fintype.ofFinite ↑(type_to_set V \ {leaf})).card = (Fintype.ofFinite ↑(type_to_set V)).card - 1 := by
         simp [← Set.toFinset_card]
 
@@ -210,8 +212,7 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
         exact CardinalityCondition
 
       have G'_has_one_less_edge_than_G : ((Fintype.ofFinite ↑(G'.edgeSet)).card) = ((Fintype.ofFinite (G.edgeSet)).card) - 1 := by
-        rw [G_has_yplus1_edges]
-        simp
+
 
         have x_in_n_set : x.1 ∈ (G.neighborSet leaf) := by
           exact x.2
@@ -221,81 +222,169 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
         have adj_iff : ∀ a b, G'.Adj a b ↔ (G.deleteEdges (G.incidenceSet leaf)).Adj a b := by
           intro a b
           apply Iff.intro
-        
+
           · have adj_def : G'.Adj a b → G.Adj a b ∧ (a ∈ (type_to_set V \ {leaf})) ∧ (b ∈ (type_to_set V \ {leaf})) := by
               exact fun a ↦ a
             intro G'_adj
             apply adj_def at G'_adj
-        
-            have edge_in_edgeset_without_leaf : s(a, b) ∈ G.edgeSet \ (G.incidenceSet leaf) := by -- NEEDS WORK
-              let edge := s(a,b)              
-              have kshfsek : a ∈ type_to_set V \ {leaf} := by
-                
-                sorry
+
+            have edge_in_edgeset_without_leaf : s(a, b) ∈ G.edgeSet \ (G.incidenceSet leaf) := by 
+              let edge := s(a,b)
               -- by contra
               by_contra contradiction
-              have fsae: G.incidenceSet leaf ⊆ G.edgeSet := by 
+              have fsae: G.incidenceSet leaf ⊆ G.edgeSet := by
                 exact SimpleGraph.incidenceSet_subset G leaf
-              
+
               have edge_in_incidentset_leaf : edge ∈ (G.incidenceSet leaf) := by
                 refine (SimpleGraph.mk'_mem_incidenceSet_iff G).mpr ?_
+
                 apply And.intro
                 · exact G'_adj.1
-                · refine Sym2.mem_iff.mp ?right.a
-                  have a_in_V_minus_leaf : a ∈ type_to_set V \ {leaf} := by
-                    exact G'_adj.2.1
-                  have leaf_neq_a : leaf ≠ a := by
-                    
-                    sorry
-                  sorry
-                
+                · rw [←SimpleGraph.edgeSet_deleteEdges] at contradiction
+                  rw [SimpleGraph.mem_edgeSet] at contradiction
+                  simp at contradiction
+                  rw [SimpleGraph.mk'_mem_incidenceSet_iff] at contradiction
+                  obtain ⟨r,G'_adj⟩ := G'_adj
+                  apply contradiction at r
+                  exact r.2
 
-                -- rw[mem_incidenceSet]
+              -- unfold SimpleGraph.incidenceSet at edge_in_incidentset_leaf
+              have a_in_V_minus_leaf : a ∈ type_to_set V \ {leaf} := by
+                exact G'_adj.2.1
+              have leaf_neq_a : leaf ≠ a := by
+                have a_neq_leaf : a ≠ leaf := by
+                  exact Set.mem_of_mem_inter_right a_in_V_minus_leaf
+                exact a_neq_leaf.symm
+              have b_in_V_minus_leaf : b ∈ type_to_set V \ {leaf} := by
+                exact G'_adj.2.2
+              have leaf_neq_b : leaf ≠ b := by
+                have b_neq_leaf : b ≠ leaf := by
+                  exact Set.mem_of_mem_inter_right b_in_V_minus_leaf
+                exact b_neq_leaf.symm
+              have a_or_b_eq_leaf : (leaf = a) ∨ (leaf = b) := by
+                rw [←SimpleGraph.edgeSet_deleteEdges] at contradiction
+                rw [SimpleGraph.mem_edgeSet] at contradiction
+                simp at contradiction
+                rw [SimpleGraph.mk'_mem_incidenceSet_iff] at contradiction
+                obtain ⟨r,G'_adj⟩ := G'_adj
+                apply contradiction at r
+                obtain ⟨ r_left , r_right ⟩ := r
+                exact r_right
 
-                -- rw[mk'_mem_incidenceSet_iff]
-                sorry  
-              -- unfold SimpleGraph.incidenceSet at edge_in_incidentset_leaf  
-              have a_or_b_eq_leaf : (a = leaf) ∨ (b = leaf) := by 
-                  
-                sorry
               -- then one of a or b must be leaf
-              
+              rw [←SimpleGraph.edgeSet_deleteEdges] at contradiction
+              rw [SimpleGraph.mem_edgeSet] at contradiction
+              simp at contradiction
+              rw [SimpleGraph.mk'_mem_incidenceSet_iff] at contradiction
+              obtain ⟨r,G'_adj⟩ := G'_adj
+              apply contradiction at r
+
+              have neither_a_nor_b_eq_leaf : ¬ (leaf = a ∨ leaf = b) := by
+                exact not_or_intro leaf_neq_a leaf_neq_b
+              exact neither_a_nor_b_eq_leaf a_or_b_eq_leaf
+
               -- contradicts G'_adj
-              sorry
             rw [← SimpleGraph.mem_edgeSet]
             rw [SimpleGraph.edgeSet_deleteEdges]
             exact edge_in_edgeset_without_leaf
 
           · intro deleteEdges_Adj
             rw [SimpleGraph.deleteEdges_adj] at deleteEdges_Adj
-            
+
             have adj_def : G'.Adj a b → G.Adj a b ∧ (a ∈ (type_to_set V \ {leaf})) ∧ (b ∈ (type_to_set V \ {leaf})) := by
               exact fun a ↦ a
-            
+
             have asjkjkds : G.Adj a b ∧ (a ∈ (type_to_set V \ {leaf})) ∧ (b ∈ (type_to_set V \ {leaf})) := by
               apply And.intro
               · exact deleteEdges_Adj.1
               · apply And.intro
                 · by_contra a_not_in_G' -- Suppose a ∉ (type_to_set V \ {leaf})
-                  
 
-                  -- then it must be leaf
-                  -- so s(a, b) is s(leaf, b), so is in incidence set
-                  -- contradiction to deleteEdges_Adj.2, whcih is that its not in the incidence set
+                  simp at a_not_in_G'
+                  have a_is_leaf : a = leaf := by
+                    exact a_not_in_G' trivial
 
+                  have edge_eq_leaf_edge : s(a,b) = s(leaf,b) :=by
+                    exact congrArg Sym2.mk (congrFun (congrArg Prod.mk (a_not_in_G' trivial)) b)
 
-                  sorry
-                · sorry
+                  have leaf_edge_in_incidentset : s(leaf,b) ∈ G.incidenceSet leaf := by
+                    rw[SimpleGraph.mk'_mem_incidenceSet_iff]
+                    simp
+                    have adj_leaf : G.Adj a b := by
+                      exact deleteEdges_Adj.1
+                    rw [a_is_leaf] at adj_leaf
+                    exact adj_leaf
 
-            
+                  have edge_in_incidentset : s(a,b) ∈ G.incidenceSet leaf := by
+                    exact Set.mem_of_eq_of_mem edge_eq_leaf_edge leaf_edge_in_incidentset
+
+                  exact deleteEdges_Adj.2 edge_in_incidentset
+
+                · by_contra b_not_in_G' -- Suppose b ∉ (type_to_set V \ {leaf})
+
+                  simp at b_not_in_G'
+                  have b_is_leaf : b = leaf := by
+                    exact b_not_in_G' trivial
+
+                  have edge_eq_leaf_edge : s(a,b) = s(a,leaf) :=by
+                    exact congrArg Sym2.mk (congrArg (Prod.mk a) (b_not_in_G' trivial))
+
+                  have leaf_edge_in_incidentset : s(a,leaf) ∈ G.incidenceSet leaf := by
+                    rw[SimpleGraph.mk'_mem_incidenceSet_iff]
+                    simp
+                    have adj_leaf : G.Adj a b := by
+                      exact deleteEdges_Adj.1
+                    rw [b_is_leaf] at adj_leaf
+                    exact adj_leaf
+
+                  have edge_in_incidentset : s(a,b) ∈ G.incidenceSet leaf := by
+                    exact Set.mem_of_eq_of_mem edge_eq_leaf_edge leaf_edge_in_incidentset
+
+                  exact deleteEdges_Adj.2 edge_in_incidentset
+
             exact adj_def asjkjkds
 
-      
         
-      sorry
-      -- rw [G_has_yplus1_edges] at G'_has_one_less_edge_than_G
-      -- simp at G'_has_one_less_edge_than_G
-      -- exact G'_has_one_less_edge_than_G
+        have G'_explicit: G'.edgeSet = G.edgeSet \ G.incidenceSet leaf := by
+          
+          sorry  
+        have equal_card : (Fintype.ofFinite G'.edgeSet).card = (Fintype.ofFinite ↑(G.edgeSet \ G.incidenceSet leaf)).card := by
+          exact my_card_congr' (Fintype.ofFinite ↑G'.edgeSet) (Fintype.ofFinite ↑(G.edgeSet \ G.incidenceSet leaf)) (congrArg Set.Elem G'_explicit)
+        
+        rw[equal_card]
+
+        simp [← Set.toFinset_card]
+      -- have V_without_leaf_card_eq_minus_one : (Fintype.ofFinite ↑(type_to_set V \ {leaf})).card = (Fintype.ofFinite ↑(type_to_set V)).card - 1 := by
+
+        have decidableEq : DecidableEq ↑G.edgeSet:= by exact Classical.typeDecidableEq ↑G.edgeSet
+        have decidableEq2 : DecidableEq ↑(G.edgeSet \ G.incidenceSet leaf):= by exact Classical.typeDecidableEq ↑(G.edgeSet \ G.incidenceSet leaf)
+        have decidableEq3 : DecidableEq ↑(G.incidenceSet leaf):= by exact Classical.typeDecidableEq ↑(G.incidenceSet leaf)
+
+        have my_Fintype : Fintype ↑G.edgeSet := by exact Fintype.ofFinite ↑G.edgeSet
+        have my_Fintype2 : Fintype ↑(G.edgeSet \ G.incidenceSet leaf) := by exact Fintype.ofFinite ↑(G.edgeSet \ G.incidenceSet leaf)
+        have my_Fintype3 : Fintype ↑(G.incidenceSet leaf) := by exact Fintype.ofFinite ↑(G.incidenceSet leaf)
+
+
+
+        rw [Set.toFinset_diff, Finset.card_sdiff] 
+        rw [Set.toFinset_singleton, Finset.card_singleton]
+
+        -- have card_eq : my_Fintype.card = (Fintype.ofFinite ↑(type_to_set V)).card := by
+        --   exact my_card_congr' my_Fintype (Fintype.ofFinite ↑(type_to_set V)) rfl
+
+        -- simp [Set.toFinset_card]
+        -- exact congrFun (congrArg HSub.hSub card_eq) 1
+        -- rw [Set.toFinset_singleton, Set.subset_toFinset, Finset.coe_singleton, Set.singleton_subset_iff]
+        -- exact leaf_in_V
+
+        sorry
+
+
+
+      rw [G_has_yplus1_edges] at G'_has_one_less_edge_than_G
+      simp at G'_has_one_less_edge_than_G
+      exact G'_has_one_less_edge_than_G
+
     -- Now we want to show G is acyclic and this follows exactly from a previous lemma
     have G'_is_acyclic : isAcyclic G'.coe := by
       exact any_subgraph_of_an_acyclic_graph_is_acyclic G G' g_is_acyclic
@@ -304,7 +393,13 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
 
       have G'coe_eq_G' : (Fintype.ofFinite G'.coe.edgeSet).card = (Fintype.ofFinite G'.edgeSet).card := by
         by_cases (y = 0)
-        · -- sub y= 0 in at G'_has_y_edges
+        · rename_i y_eq_zero
+          rw[y_eq_zero] at G'_has_y_edges
+          have G'_edgeset_empty : (Fintype.ofFinite G'.edgeSet).card = 0 := by
+            exact G'_has_y_edges
+
+
+          -- sub y= 0 in at G'_has_y_edges
           -- have that the edgeset of G' is empty
           -- in turn this means coe must be empty
           sorry
@@ -336,6 +431,16 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
       exact Nat.le_refl y
 
     have nonemptyG' : Nonempty ↑(G'.verts) := by
+      have G'_has_gte_one_vertex : 0 < (Fintype.ofFinite ↑(G'.verts)).card := by
+        have y_gte_zero : y ≥ 0 := by
+          exact Nat.zero_le y
+        rw [G'_has_yplus1_vertices]
+        simp
+
+      -- rw [← Fintype.card_pos] Should just be this, idk why it isnt :(
+      simp
+
+
       sorry -- probs use nonzero
 
     have inductive_check : ((Fintype.ofFinite (G'.verts)).card) - 1 = y := by
@@ -351,24 +456,24 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
       have G'_coe_precon : G'.coe.Preconnected := by
         exact G'_connected.1
       unfold SimpleGraph.Preconnected at G'_coe_precon
-      
+
       have fjajld : ∀ a b : G'.verts, G.Reachable ↑a ↑b := by
         intro a b
         let reachable_in_coe := G'_coe_precon a b
         apply SimpleGraph.Reachable.map subgraph_to_graph_hom at reachable_in_coe
-      
+
         have hshk : subgraph_to_graph_hom a = ↑a := by
           exact rfl
-      
+
         have hsasddsahk : subgraph_to_graph_hom b = ↑b := by
           exact rfl
         rw [hshk,hsasddsahk] at reachable_in_coe
         exact reachable_in_coe
-      
+
       have adkffe : ∀ a : V, G.Reachable a leaf := by
-      
+
         have asdfos : G.Reachable leaf x.1 := by
-      
+
           have x_in_n_set : x.1 ∈ (G.neighborSet leaf) := by
             exact x.2
 
@@ -382,7 +487,7 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
       -- have everything is reaable from leaf as well, because reachable to x
       -- so then everything reachable
       sorry
-    
+
     exact SimpleGraph.Connected.mk G_preconnected
 
 
@@ -440,5 +545,3 @@ lemma onetwothreefourfive_equiv_six {V : Type} [Finite V] (G : SimpleGraph V) (F
     have forward : isAcyclic G ∧ (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1 := by
       exact onetwothreefourfive_implies_six G G_is_tree nonempty
     simp_all
-
-
