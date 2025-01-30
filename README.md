@@ -29,7 +29,7 @@ This repository contains proofs and definitions related to tree equivalence in *
 
 - **treeIsMinimallyConnected** ✅ (Elliot)  
   _T is minimally connected implies T is a tree._  
-  (_Proved using `SimpleGraph.Acyclic` but contains two `sorry` statements, likely due to definitional equivalence._)
+  (_Proved using `SimpleGraph.Acyclic`. Contains two `sorry` statements, likely due to definitional equivalence._)
 
 - **(Olivia's Proofs)** ⬜ ⬜
 
