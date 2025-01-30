@@ -349,8 +349,7 @@ lemma connected_component_coe_is_connected {V : Type} [Finite V] [Nonempty V] {G
             rw [← G'Adj_def] -- Rewrite our goal to be to fufil this condition
             simp_all only [and_self] -- We see we have already fufilled each of the properties of the statement
 
-          simp_all only [SimpleGraph.mem_edgeSet, Subtype.forall, SimpleGraph.Subgraph.mem_edgeSet, SimpleGraph.deleteEdges_adj, not_or, not_not, not_true_eq_false]
-          -- SIMP TO DO
+          simp_all [Subtype.forall] -- We see all_edges_of_verts_are_in_G' is equivalent to our goal, so we are done
 
         have a_to_1 : G_e_removed.Reachable a edge_val_1 := by -- We see there is a path from a to edge_val_1
 
