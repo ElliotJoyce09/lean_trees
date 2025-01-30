@@ -33,13 +33,13 @@ This repository contains proofs and definitions related to tree equivalence in *
 
 - **(Olivia's Proofs)** ⬜ ⬜
 
-- **(Daniel's Proofs)**
+**(Daniel's Proofs)**
 - onetwothreefour_implies_five ✅
-  _The proof that (1,2,3,4) → (5) (Where the numbers reference the original statement of the theorem from the MA4J3 Graph Theorylecture notes). That is, if a graph G on a finite and nonempty vertex set is a tree, then we have |E(G)| = |V(G)| - 1.._
+  _The proof that (1,2,3,4) → (5) (Where the numbers reference the original statement of the theorem from the MA4J3 Graph Theory lecture notes). That is, if a graph G on a finite and nonempty vertex set is a tree, then we have |E(G)| = |V(G)| - 1._
 - five_implies_onetwothreefour_acyclic_part ✅
-  _The first part of the proof of (5) → (1,2,3,4). It is a proof that a connected graph with one less edge than vertices is acyclic.._
+  _The first part of the proof of (5) → (1,2,3,4). It is a proof that a connected graph with one less edge than vertices is acyclic._
 - five_implies_onetwothreefour ✅
-  _The proof of (5) → (1,2,3,4). If a graph G on a finite vertex set is connected and has one less edge than it does vertices, then it is a tree.._
+  _The proof of (5) → (1,2,3,4). If a graph G on a finite vertex set is connected and has one less edge than it does vertices, then it is a tree._
 
 
 - **(Krisha's Proofs)** ⬜ ⬜
