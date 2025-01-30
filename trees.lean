@@ -1,9 +1,7 @@
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Path
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Tactic -- Don't think is needed need???? but curtrently used for interval_cases
 import Mathlib.Combinatorics.SimpleGraph.Subgraph
-import Mathlib.Data.Fintype.Basic
+import Mathlib.Tactic -- Used for interval_cases
 
 namespace trees
 
