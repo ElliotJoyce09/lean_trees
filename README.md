@@ -35,11 +35,11 @@ This repository contains proofs and definitions related to tree equivalence in *
 
 - **(Daniel's Proofs)**
 - onetwothreefour_implies_five ✅
-  _The proof that (1,2,3,4) → (5) (Where the numbers reference the original statement of the theorem from the MA4J3 Graph Theorylecture notes). That is, if a graph G on a finite and nonempty vertex set is a tree, then we have |E(G)| = |V(G)| - 1.
+  _The proof that (1,2,3,4) → (5) (Where the numbers reference the original statement of the theorem from the MA4J3 Graph Theorylecture notes). That is, if a graph G on a finite and nonempty vertex set is a tree, then we have |E(G)| = |V(G)| - 1.._
 - five_implies_onetwothreefour_acyclic_part ✅
-  _The first part of the proof of (5) → (1,2,3,4). It is a proof that a connected graph with one less edge than vertices is acyclic.
+  _The first part of the proof of (5) → (1,2,3,4). It is a proof that a connected graph with one less edge than vertices is acyclic.._
 - five_implies_onetwothreefour ✅
-  _The proof of (5) → (1,2,3,4). If a graph G on a finite vertex set is connected and has one less edge than it does vertices, then it is a tree.
+  _The proof of (5) → (1,2,3,4). If a graph G on a finite vertex set is connected and has one less edge than it does vertices, then it is a tree.._
 
 
 - **(Krisha's Proofs)** ⬜ ⬜
@@ -55,9 +55,9 @@ Explanations for each of my lemmas/theorems/definitions can be found commented a
 - **connectedComponentToSubGraph** ✅ (Daniel)
 - **edgeConversionG'CoeToG** ✅ (Daniel)
 - **map_to_membership_or_sink** ✅ (Daniel)
-  _This result has been marked as noncomputable in lean due to its usage of an if statement
+  _This result has been marked as noncomputable in lean due to its usage of an if statement._
 - **spanningCoeToCoeHom** ✅  (Daniel)
-  _This result has also been marked noncomputable due to its reliance on the above result
+  _This result has also been marked noncomputable due to its reliance on the above result._
 - **reachableByCompImpliesconnComp** ✅ (Daniel)
 - **connected_component_coe_is_connected** ✅ (Daniel)
 - **subgraph_to_graph_hom** ✅ (Daniel)
@@ -66,12 +66,12 @@ Explanations for each of my lemmas/theorems/definitions can be found commented a
 - **Walk_map** ✅ (Daniel)
 - **conn_comp_acyclic** ✅ (Daniel)
 - **my_card_congr** ✅ (Daniel)
-  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case
+  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case._
 - **my_set_fintype_card_eq_univ_iff** ✅ (Daniel)
-  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case
+  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case._
 - type_eq_set_iff_card_the_same** ✅ (Daniel)
 - my_card_congr'** ✅ (Daniel)
-  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case
+  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case._
 - subgraph_edgeSet_card_eq_coe_card** ✅ (Daniel)
 - split_up_card_of_union** ✅ (Daniel)
 - union_minus_intersection_eq_sum_of_sets** ✅ (Daniel)
@@ -80,7 +80,7 @@ Explanations for each of my lemmas/theorems/definitions can be found commented a
 - getVert_to_support_index_map** ✅ (Daniel)
 - takeUntil_length_lt_if_endpoints_neq** ✅ (Daniel)
 - my_set_fintype_card_le_univ** ✅ (Daniel)
-  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case
+  _This result is not entirely my work, but instead is an adaptation of a prexisting lemma to my use case._
 - edges_of_p_cut_in_G_e_removed** ✅ (Daniel)
 - reachableToAllVerts** ✅ (Daniel)
 - edge_not_in_connComp_implies_vert_not_in** ✅ (Daniel)
