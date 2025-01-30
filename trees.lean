@@ -1303,7 +1303,7 @@ def takeUntil_length_lt_if_endpoints_neq {V : Type} [DecidableEq V] {G : SimpleG
 
   exact Nat.lt_of_le_of_ne leq neq -- Less than or equal to and not equal naturally implies less than
 
-/-- An adaptation of the built-in set_fintype_card_le_univ for my use case in onetwothreefour_implies_five_part_1 -/
+/-- An adaptation of the built-in set_fintype_card_le_univ for my use case in onetwothreefour_implies_five -/
 theorem my_set_fintype_card_le_univ (V : Fintype α) (set : Set α) (s : Fintype set) :
     Fintype.card set ≤ Fintype.card α :=
   Fintype.card_le_of_embedding (Function.Embedding.subtype set)
@@ -2354,7 +2354,7 @@ lemma have_edge_contradiction {V : Type} [Finite V] [Nonempty V] {G G_e_removed:
 
   exact e_num_not_in_G' e_num_in_G' -- So there is an edge both in G' and not in it, a contradiction
 
-/-- The first part of the proof that (1,2,3,4) → (5). If a graph G on a finite and nonempty vertex set is a tree, then we have |E(G)| = |V(G)| - 1 -/
+/-- The proof that (1,2,3,4) → (5). If a graph G on a finite and nonempty vertex set is a tree, then we have |E(G)| = |V(G)| - 1 -/
 theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (G_is_tree : isTree G) (nonempty: Nonempty V):
   ((Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1) := by
   have G_is_connected : G.Connected := by
@@ -3467,7 +3467,7 @@ theorem five_implies_onetwothreefour_acyclic_part {V : Type} [Finite V] (G : Sim
     simp_all only [Set.toFinset_card] -- Using the equality of the desired set cardinalities and the cardinality of edgeFinset.card we see we have found the desired statemnt
 
   have edge_vert_equality_G_0 : (Fintype.ofFinite G_0.edgeSet).card = (Fintype.ofFinite V).card - 1 := by -- We know that |E(G0)| = |V (G0)| − 1 as G0 is a tree, and thus we can apply our previous work
-    have nonempty_V : Nonempty V := by -- this is requied for the usage of "onetwothreefour_implies_five_part2"
+    have nonempty_V : Nonempty V := by -- this is requied for the usage of "onetwothreefour_implies_five"
       exact g_is_connected.nonempty -- follows from connectedness
     exact onetwothreefour_implies_five G_0 G_0_is_Tree nonempty_V
     -- Applying the result from the other direction that tells us that if a graph is connected and its vertex set is Nonempty then it is
