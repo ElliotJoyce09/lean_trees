@@ -381,7 +381,7 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
           -- rw [← SimpleGraph.edgeSet_deleteEdges (G.incidenceSet leaf)]
         
         let prime_edgeset := G'.edgeSet
-        -- subst prime_edgeset
+        subst prime_edgeset
 
 
           
