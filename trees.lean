@@ -513,7 +513,6 @@ lemma my_card_congr {α β} (a : Fintype α) (b : Fintype β) (f : α ≃ β) : 
   rw [← Fintype.ofEquiv_card f]; congr!
 
 /-- An adaptation of the built-in fintype_card_eq_univ_iff where the set is entered as a set rather than a finset -/
-
 theorem my_set_fintype_card_eq_univ_iff {α} (V : Fintype α) (s : Set α) [Fintype s] :
     Fintype.card s = Fintype.card α ↔ s = Set.univ := by
   rw [← Set.toFinset_card, Finset.card_eq_iff_eq_univ, ← Set.toFinset_univ, Set.toFinset_inj]
