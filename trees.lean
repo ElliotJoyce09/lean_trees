@@ -821,9 +821,11 @@ lemma subgraph_edgeSet_card_eq_coe_card {V : Type} [Finite V] {G : SimpleGraph V
       rw [G_1_coe_card_one] at Hcoe
       exact id (Eq.symm Hcoe)
 
+/-- A proof that if we have strongly inducted on the sum of cardinality of two sets with an empty intersection, and there are two sets a and b with empty intersection and a union of cardianlity y + 1 and there is 
+some element u that is in a and not in b then the sum of the cardinalites of a and b is the same as that of their union (y + 1) -/ 
 lemma split_up_card_of_union {V : Type} [Finite V] {y : ℕ} (hy : ∀ m ≤ y,  ∀ (a b : Set V), ∅ = a ∩ b → (Fintype.ofFinite ↑(a ∪ b)).card = m →
                  (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = m) {a b : Set V}
-                 (empty_inter : ∅ = a ∩ b) (hu : (Fintype.ofFinite ↑(a ∪ b)).card = y + 1) {u :V} (u_prop : u ∈ a ∨ u ∈ b)
+                 (empty_inter : ∅ = a ∩ b) (hu : (Fintype.ofFinite ↑(a ∪ b)).card = y + 1) {u :V}
                  (in_a_not_b : u ∈ a ∧ u ∉ b) : (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = y + 1 := by
   obtain ⟨in_a, not_in_b⟩ := in_a_not_b
   have card_union_without_u_eq_minus_one : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card = (Fintype.ofFinite ↑(a ∪ b)).card - 1 := by
@@ -847,7 +849,7 @@ lemma split_up_card_of_union {V : Type} [Finite V] {y : ℕ} (hy : ∀ m ≤ y, 
 
     -- This is closes out goal, but card_sdiff required {u}.toFinset ⊆ (a ∪ b).toFinset, so we must now prove that
     rw [Set.toFinset_singleton, Set.subset_toFinset, Finset.coe_singleton, Set.singleton_subset_iff] -- We see this is equivalent to u ∈ (a ∪ b)
-    exact u_prop-- This is exactly one of the assumptions
+    exact Set.mem_union_left b in_a -- This is exactly one of the assumptions
 
 
   have card_union_without_u_eq_y  : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card = y := by -- (Fintype.ofFinite ↑(a ∪ b)).card = y + 1 by hu, so this is just subbing that in a simplifying
@@ -1028,7 +1030,7 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V]
     rw [Set.inter_comm a b] at empty_inter
     symm at u_prop
 
-    let card_b_plus_card_a_eq_y_plus_one := split_up_card_of_union hy empty_inter hu u_prop in_b_not_a
+    let card_b_plus_card_a_eq_y_plus_one := split_up_card_of_union hy empty_inter hu in_b_not_a
     rw [add_comm]
     exact card_b_plus_card_a_eq_y_plus_one
 
