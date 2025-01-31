@@ -1,4 +1,4 @@
-import Mathlib.Combinatorics.SimpleGraph.Basic
+import Mathlib.Combinatorics.SimpleGraph.Basic -- These three are imported to allow us to use Matlib's Graphs, as well as a series of results,properties, and structures related to them.
 import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Combinatorics.SimpleGraph.Subgraph
 import Mathlib.Tactic -- Used for interval_cases
