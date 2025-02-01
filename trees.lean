@@ -3440,149 +3440,321 @@ theorem five_implies_onetwothreefour {V : Type} [Finite V] (G : SimpleGraph V) (
 -- Olivia Theorems (Due to be updated still) 
 -- feel free to change theorem names
 
-theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMaximallyAcyclic G := by
-  unfold isTree
-  unfold isMaximallyAcyclic
-  unfold isAcyclic
-  intro h
-  obtain ⟨x1, x2⟩ := h
-  apply And.intro
-  · exact x2
-  · intro e eInNonEdgeSet
-    obtain ⟨a,b⟩ := e
-    have preconn : G.Preconnected := by
-      exact x1.preconnected
-    unfold SimpleGraph.Preconnected at preconn
-    let a_b_reachable := preconn a b
-    have reachable_iff_path : ∃ (c : G.Walk a b), c.IsPath := by
-      apply Set.exists_mem_of_nonempty at a_b_reachable
-      obtain ⟨walk, prop⟩ := a_b_reachable
-      have decEq_V : DecidableEq V := by
+-- (2: any two vertices connected by unique path)
+--                    --->
+-- (3: T is minimally connected)
+
+theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquelyConnected G -> IsMinimallyConnected G := by
+  intro h                                                    -- introduce h
+  let h' := h                                                -- make a copy of h to get Acyclic from it
+
+  simp [IsUniquelyConnected] at h                            -- simplify h as well as the goal
+  simp [IsMinimallyConnected]
+
+  -- apply twoVerticesConnectedByUniquePathImpliesTree at h'    -- apply theorem 2->1 to obtain Acyclic
+  -- simp [IsTree] at h'                                        -- from h' for later use in the proof
+  -- obtain ⟨TreeConnected, TreeAcyclic⟩ := h'                  -- no circlular logic as 2->1 does not rely on this
+
+  contrapose h
+  simp at h                                                  -- contrapose and simplify h for a nicer goal structure
+  simp [h]                          
+  obtain ⟨HEdge, HEdgeProp⟩ := h                             -- obtain the edge and the property from h
+  obtain ⟨HEdgeInG, GRemoveHEdgeConnected⟩ := HEdgeProp      -- obtain that edge is in G, and G remove the edge from h is connected
+  obtain ⟨a, b⟩ := HEdge                                     -- obtain the two vertices from the edge from h
+
+  have NotUniquePath : ¬ isUniquePath a b G := by
+    unfold isUniquePath                                      -- get to not ∀ a b which are paths, a = b
+    simp [not_forall]                                        -- replace not forall with exists to search for existence
+    rw [SimpleGraph.mem_edgeSet] at HEdgeInG                 -- replace edge ∈ G.edgeSet with G.Adj a b
+    let ShortPathInG := SimpleGraph.Path.singleton HEdgeInG  -- the 'short' path is the G.Path a b which is the edge a b
+
+    have GRemoveEdgePreconnected : (G.deleteEdges {s(a, b)}).Preconnected := by
+      exact GRemoveHEdgeConnected.preconnected               -- show that G without {a,b} is preconnected
+    
+    unfold SimpleGraph.Preconnected at GRemoveEdgePreconnected
+    let ABReachable := GRemoveEdgePreconnected a b           -- unfold preconnectedness and get a -> b is reachable
+    
+    have ReachableIffPath : ∃ (c : (G.deleteEdges {s(a,b)}).Walk a b), c.IsPath := by
+      apply Set.exists_mem_of_nonempty at ABReachable        
+      obtain ⟨LongWalkInGRemAB, LongWalkInGRemABProp⟩ := ABReachable -- obtain the a -> b walk and property as we have a -> b is reachable
+      have DecEqV : DecidableEq V := by
         exact Classical.typeDecidableEq V
-      let path := walk.toPath
-      apply Exists.intro
-      · apply path.2
+      have LongPathInGRemAB := LongWalkInGRemAB.toPath       -- get the a -> b path in G remove {a,b} from the walk
+      simp_all only [Set.mem_univ]
+      obtain ⟨val, GRemoveABPathIsPath⟩ := LongPathInGRemAB  -- get the property that the long path in G remove {a,b} is a path
+      apply Exists.intro                                     -- conclude that if b is reachable from a on G without {a,b} then there must be a path from a to b
+      · apply GRemoveABPathIsPath                            -- that is not just the edge {a,b}
+      
+    obtain ⟨LongWalkInGRemAB, LongWalkInGRemABIsPath⟩ := ReachableIffPath    -- obtain the long walk and property
 
-    obtain ⟨pathInG, isPath⟩ := reachable_iff_path
+    have DecEqV : DecidableEq V := by
+      exact Classical.typeDecidableEq V
+    have GRemABisSubgraph : G.deleteEdges {s(a, b)} ≤ G := by
+      exact SimpleGraph.deleteEdges_le {s(a, b)}            -- show that G without {a,b} is subgraph of G
 
-    have cycleexists : hasACycle (addEdgeToGraph G (Quot.mk (Sym2.Rel V) (a, b))) := by
+    let LongWalkInG := SimpleGraph.Walk.mapLe GRemABisSubgraph LongWalkInGRemAB 
+    let LongPathInG := LongWalkInG.toPath                  -- show that the walk exists on G as it exists on a subgraph of G then convert the walk to a path
 
-      let DesiredEdge := Quot.mk (Sym2.Rel V) (a, b)
 
-      let GAddEdge := addEdgeToGraph G DesiredEdge
+    have PathsDifferent : ¬ ShortPathInG.1 = LongPathInG.1 := by
+      let CombinedWalk := (SimpleGraph.Walk.cons HEdgeInG LongPathInG.1.reverse)       -- combine the long path in G and the edge to get a G Walk from a to a
+      have combined_walk_is_cycle : CombinedWalk.IsCycle := by                         -- now prove that the a to a walk is a cycle
+        rw [SimpleGraph.Walk.cons_isCycle_iff]
+        apply And.intro
+        · simp_all only [SimpleGraph.Walk.isPath_reverse_iff, SimpleGraph.Path.isPath] --show that p.1.reverse is a path
+        · intro CycleContradiction
+          have LongPathEdgesInGRemAB :  ∀ e ∈ LongPathInG.1.reverse.edges, e ∈ (G.deleteEdges {s(a,b)}).edgeSet := by
+            simp [SimpleGraph.deleteEdges]
+            intro LongPathEdge LongPathEdgeInLongPath      -- introduce the long path edge, and the property that the edge is in the long path
 
-      have GSubgraphOfGAddEdge : G ≤ addEdgeToGraph G DesiredEdge := by
-        simp_all only [addEdgeToGraph]
+            have LongPathEdgeInGEdges : LongPathEdge ∈ G.edgeSet := by
+              apply SimpleGraph.Walk.edges_subset_edgeSet LongPathInG.1 at LongPathEdgeInLongPath
+              exact LongPathEdgeInLongPath                 -- show that the long path edge must be in the edge set of G bc long path is defined on G
+
+            have LongPathEdgeNotAB : ¬ LongPathEdge = s(a,b) := by 
+              simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, LongPathInG, LongWalkInG]
+              apply Aesop.BuiltinRules.not_intro
+              intro a_1                                    -- show that the long path edge is not s(a,b)
+              subst a_1                                    -- by showing that it must be false that s(a,b) 
+              simp_all only [SimpleGraph.mem_edgeSet]      -- is in the long path defined on G remove s(a,b)
+
+              ---------------------------
+
+              have ShortPathEdgeInLongWalkInGRemAB : s(a,b) ∈ LongWalkInGRemAB.edges := by
+                sorry
+
+              ---------------------------
+
+              apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at ShortPathEdgeInLongWalkInGRemAB
+              simp_all only [SimpleGraph.mem_edgeSet, SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff,
+                not_true_eq_false, and_false]
+
+            -- conclude the goal as all edges of the long path are shown to be in G, and not equivalent to the removed s(a,b)
+            -- and therefore all edges of the long path must also be in G remove {a,b}
+            simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, not_false_eq_true, and_self, LongPathInG, LongWalkInG]
+
+          let ReverseLongWalkInGRemAB := SimpleGraph.Walk.transfer LongPathInG.1.reverse (G.deleteEdges {s(a,b)}) LongPathEdgesInGRemAB
+          have ABEdgeInGRemAB : (s(a, b) ∈ LongPathInG.1.reverse.edges) -> s(a, b) ∈ (G.deleteEdges {s(a,b)}).edgeSet := by
+            intro a_1           -- show that if {a,b} is in the long path, it must be in G remove {a,b}
+            simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, LongPathInG, LongWalkInG]
+
+          -- conclude the goal as we have shown the contradiction that {a,b} must be in the graph G remove {a,b}
+          apply LongPathEdgesInGRemAB at CycleContradiction
+          simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, implies_true, SimpleGraph.mem_edgeSet,
+            SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, not_true_eq_false, and_false, LongPathInG, LongWalkInG]
+
+      have GIsAcylic : isAcyclic G := by
+        --exact TreeAcyclic          -- use the property from the very start to state that G must be acyclic
         sorry
 
-      have decEq_V : DecidableEq V := by
+      unfold isAcyclic at GIsAcylic
+      unfold hasACycle at GIsAcylic  -- unfold acyclic and simplify to conclude that the paths must be different
+      simp_all only [not_exists]    
+
+    have ShortPathIsPath : ShortPathInG.1.IsPath := by
+      obtain ⟨ShortPathInG, ShortPathInGIsPath⟩ := ShortPathInG
+      exact ShortPathInGIsPath       -- show that the edge {a,b} is a path in G
+
+    have LongPathIsPath : LongPathInG.1.IsPath := by
+      obtain ⟨LongPathInG, LongPathInGIsPath⟩ := LongPathInG
+      exact LongPathInGIsPath       -- show that the long path is a path in G
+
+    exists ShortPathInG             -- by the existence of the short path and the long path
+    exists ShortPathIsPath          -- which have been proven to be different from each other
+    exists LongPathInG              -- it is concluded that there is not a unique path from a to b
+
+  exists a                          -- the existence of a and b then concludes this theorem
+  exists b                          -- as proving this was the final contraposed goal.
+
+
+
+
+
+
+
+-- (1: T is a tree)
+--      -->
+-- (4: T maximally acyclic)
+
+theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMaximallyAcyclic G := by
+  unfold isTree
+  unfold isMaximallyAcyclic                                -- unfold the above structures and introduce h
+  unfold isAcyclic                                         -- then obtain that G is connected and acyclic 
+  intro h                                                  -- from fact that G is a tree
+  obtain ⟨ConnectedG, NotHasAcycleG⟩ := h
+  apply And.intro
+  · exact NotHasAcycleG                                    -- clear the Acyclic part of the goal as it is direct
+  · intro NonEdge NonEdgeInNonEdgeSet                      -- introduce an edge in the non edge set of G alongside its property
+    obtain ⟨a,b⟩ := NonEdge                                -- obtain the two vertices which form this non edge
+    
+    have GPreconncted : G.Preconnected := by         
+      exact ConnectedG.preconnected                        -- show that G is preconnected as it is connected
+    unfold SimpleGraph.Preconnected at GPreconncted        -- then unfold Preconnected and show that we have
+    let ABReachable := GPreconncted a b                    -- b is reachable from a in G
+    
+    have ReachableIffPath : ∃ (c : G.Walk a b), c.IsPath := by
+      apply Set.exists_mem_of_nonempty at ABReachable
+      obtain ⟨WalkInG, WalkInGProp⟩ := ABReachable         -- show a walk exists as we have Reachable a b
+      have DecEqV : DecidableEq V := by
         exact Classical.typeDecidableEq V
-      let GAddEdgeLongWalk := SimpleGraph.Walk.mapLe GSubgraphOfGAddEdge pathInG
-      let GAddEdgeLongPath := GAddEdgeLongWalk.toPath
+      let PathInG := WalkInG.toPath                        -- convert the walk into a path
+      apply Exists.intro
+      · apply PathInG.2                                    -- conclude the goal as we have found a path
+
+    obtain ⟨LongPathInG, LongPathInGIsPath⟩ := ReachableIffPath   -- obtain the long path in G, and the isPath property
+
+    have CycleExists : hasACycle (addEdgeToGraph G (Quot.mk (Sym2.Rel V) (a, b))) := by
+      let DesiredEdge := Quot.mk (Sym2.Rel V) (a, b)       -- define the edge to be added
+      let GAddEdge := addEdgeToGraph G DesiredEdge         -- define the graph G add edge
+
+      ------------
+
+      have GSubgraphOfGAddEdge : G ≤ addEdgeToGraph G DesiredEdge := by
+        simp_all only [addEdgeToGraph]                     -- show that G is a subgraph of G add edge
+        simp_all [DesiredEdge]
+        sorry
+
+      ------------
+
+      have DecEqV : DecidableEq V := by
+        exact Classical.typeDecidableEq V
+      let LongWalkInGAddEdge := SimpleGraph.Walk.mapLe GSubgraphOfGAddEdge LongPathInG
+      let LongPathInGAddEdge := LongWalkInGAddEdge.toPath  -- map the long path in G to a walk in G add edge then convert to a path
 
       have GAddEdgeAdjAB : GAddEdge.Adj a b := by
-        simp_all only [GAddEdge, DesiredEdge]
-        simp [addEdgeToGraph]
-        have ANeB : ¬ a = b := by      
-          simp[nonEdgeSet] at eInNonEdgeSet
+        simp_all only [GAddEdge, DesiredEdge]              -- show that a and b are adjacent in G add edge
+        simp [addEdgeToGraph]                              -- as this is the edge being added to G
+        have ANeB : ¬ a = b := by                          
+          simp[nonEdgeSet] at NonEdgeInNonEdgeSet          -- use that a is not equal to b to do so
           simp_all only [not_false_eq_true]
         simp_all only [not_false_eq_true, or_true]
 
-      let GAddEdgeShortPath := SimpleGraph.Path.singleton GAddEdgeAdjAB
+      let ShortPathInGAddEdge := SimpleGraph.Path.singleton GAddEdgeAdjAB -- convert the added edge to a 'short' path in G add edge
 
       have EdgeAdjABNotInG : G.Adj a b = false := by
-        simp [nonEdgeSet] at eInNonEdgeSet
-        simp_all only [Bool.false_eq_true]
+        simp [nonEdgeSet] at NonEdgeInNonEdgeSet           -- show that {a,b} is not in G as it is
+        simp_all only [Bool.false_eq_true]                 -- in the non edge set of G
 
-      let CombinedWalk := (SimpleGraph.Walk.cons GAddEdgeAdjAB GAddEdgeLongPath.1.reverse)
+      let CombinedWalk := (SimpleGraph.Walk.cons GAddEdgeAdjAB LongPathInGAddEdge.1.reverse) -- combine {a,b} with the long path to get a Walk from a to a
       simp [hasACycle]
       have CombinedWalkIsCycle : CombinedWalk.IsCycle := by
-        rw [SimpleGraph.Walk.cons_isCycle_iff]
+        rw [SimpleGraph.Walk.cons_isCycle_iff]              -- prove that the combined walk is a cycle
         apply And.intro
-        · --show that p.1.reverse is a path
-          simp_all only [SimpleGraph.Walk.isPath_reverse_iff, SimpleGraph.Path.isPath]
-        · -- if this was true then s(a,b) was in
-          intro cycle_contradiction
+        · simp_all only [SimpleGraph.Walk.isPath_reverse_iff, SimpleGraph.Path.isPath] --show that p.1.reverse is a path
+        · intro CycleContradiction                          -- show that {a,b} cannot be in the long path to close the goal
+          have LongPathEdgesInG :  ∀ e ∈ LongPathInGAddEdge.1.reverse.edges, e ∈ G.edgeSet := by
+            intro LongPathEdge LongPathEdgeInLongPath       -- introduce a long path edge, and the property that it is in the long path
 
+            have LongPathEdgeInGAddEdge : LongPathEdge ∈ (addEdgeToGraph G DesiredEdge).edgeSet := by
+              apply SimpleGraph.Walk.edges_subset_edgeSet LongPathInGAddEdge.1.reverse at LongPathEdgeInLongPath
+              exact LongPathEdgeInLongPath                  -- show that the long path edge is in the edge set of G add {a,b} as the long path is defined on G add {a,b}
 
-          have path_edges_in_G :  ∀ e ∈ GAddEdgeLongPath.1.reverse.edges, e ∈ G.edgeSet := by
-            intro edge edge_prop
-            
+            ----------------
+
+            have EdgeNotDesiredEdge : ¬ LongPathEdge = DesiredEdge := by
+              sorry
+
+            simp_all only [Bool.false_eq_true, eq_iff_iff, iff_false, SimpleGraph.Walk.edges_reverse,
+              List.mem_reverse, GAddEdge, DesiredEdge, LongPathInGAddEdge, LongWalkInGAddEdge]
             sorry
 
+          ------------------
 
-          let p_in_G_remove_AB := SimpleGraph.Walk.transfer GAddEdgeLongPath.1.reverse G path_edges_in_G
-          have edge_in_graph : (s(a, b) ∈ GAddEdgeLongPath.1.reverse.edges) -> s(a, b) ∈ G.edgeSet := by
-            intro a_1
-            simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, GAddEdgeLongPath, GAddEdgeLongWalk]
 
-          apply edge_in_graph at cycle_contradiction
+          let LongPathInG := SimpleGraph.Walk.transfer LongPathInGAddEdge.1.reverse G LongPathEdgesInG
+          have ABEdgeInG : (s(a, b) ∈ LongPathInGAddEdge.1.reverse.edges) -> s(a, b) ∈ G.edgeSet := by
+            intro a_1          -- show that if {a,b} is in the long path it must be in the edge set of G as well
+            simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, LongPathInGAddEdge, LongWalkInGAddEdge]
+
+          -- conclude the goal as we have shown the contradiction that {a,b} must be in the graph G 
+          -- which is not possible as {a,b} is in the non edge set of G
+          apply LongPathEdgesInG at CycleContradiction
           simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, implies_true, SimpleGraph.mem_edgeSet,
-            SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, not_true_eq_false, and_false, GAddEdgeLongPath, GAddEdgeLongWalk]
+            SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, not_true_eq_false, and_false, LongPathInGAddEdge, LongWalkInGAddEdge]
           simp_all only [eq_iff_iff, iff_true, Bool.false_eq_true]
 
-      exists a
-      exists CombinedWalk
+      exists a                -- conclude the goal as we have found a vertex, a, for which
+      exists CombinedWalk     -- there is a walk from a to a, where the walk is also a cycle
 
-    exact cycleexists
+    exact CycleExists         -- this existence of this cycle then concludes the proof of this theorem.
+
+
+
+
 
 
 -- (4: T maximally acyclic)
 --       -->
 -- (1: T is a tree)
 
-
-
 theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMaximallyAcyclic G -> isTree G := by
   unfold isTree
-  unfold isMaximallyAcyclic
-  unfold isAcyclic
-  intro h
-  apply And.intro
-  · have reachable_from_all : ∀ a b, G.Reachable a b := by
-      intro a b
-      by_cases AEqB : a = b
-      · subst AEqB
-        obtain ⟨left, right⟩ := h
-        rfl
-      · by_cases Adjacency : G.Adj a b
-        · let AdjacentPath := SimpleGraph.Path.singleton Adjacency
-          apply SimpleGraph.Walk.reachable AdjacentPath.1
-        · have EdgeInNotEdges : s(a, b) ∈ nonEdgeSet G := by
-            simp [nonEdgeSet]
-            have ANotB : ¬ a = b := by
-              exact AEqB
-            simp_all only [not_false_eq_true, and_self]
+  unfold isMaximallyAcyclic                               -- unfold the terms and introduce h
+  unfold isAcyclic                                        -- split to two cases and immediately 
+  intro h                                                 -- clear the acyclic condition as it
+  apply And.intro                                         -- is obvious from maximally acyclic
+  · have ReachableFromAll : ∀ a b, G.Reachable a b := by
+      intro a b                                           -- introduce the two vertices a and b
+      by_cases AEqB : a = b                               -- split to two cases, a=b and not a=b
+      · subst AEqB                                    
+        obtain ⟨left, right⟩ := h                         -- when a=b, we have Reachable a a in
+        rfl                                               -- in all graph so result is simple
 
-          apply h.2 at EdgeInNotEdges
-          simp [hasACycle] at EdgeInNotEdges
-          obtain ⟨v, prop⟩ := EdgeInNotEdges
-          obtain ⟨walk, prop2⟩ := prop
+      · by_cases Adjacency : G.Adj a b                    -- split into two cases again, {a,b} in G and not {a,b} in G
+        · let AdjacentPath := SimpleGraph.Path.singleton Adjacency
+          apply SimpleGraph.Walk.reachable AdjacentPath.1 -- when G.Adj a b, G.Reachable a b is simple
+
+        · have ABEdgeInNonEdgeSet : s(a, b) ∈ nonEdgeSet G := by
+            simp [nonEdgeSet]                             -- now for the case when a is not adjacent to b in G
+            have ANotB : ¬ a = b := by                    
+              exact AEqB                                  -- we have not a = b from the original case split
+            simp_all only [not_false_eq_true, and_self]   -- which proves that s(a,b) is in the non edge set of G
+
+          apply h.2 at ABEdgeInNonEdgeSet                 -- we can then use the maximally acyclic definition to get a cycle in G add {a,b}
+          simp [hasACycle] at ABEdgeInNonEdgeSet          -- simplifying this, we can then obtain the components of the cycle
+          obtain ⟨CycleVertex, CycleVertexProp⟩ := ABEdgeInNonEdgeSet  
+          obtain ⟨CycleWalk, CycleWalkIsCycle⟩ := CycleVertexProp
 
           have GAddEdgeAdjAB : (addEdgeToGraph G s(a, b)).Adj a b := by
-            simp [addEdgeToGraph]
-            have ANeB : ¬ a = b := by
-              exact AEqB
+            simp [addEdgeToGraph]                         -- we show here that in G add {a,b},
+            have ANeB : ¬ a = b := by                     -- we have Adj between a and b
+              exact AEqB                                  -- because a ≠ b
             simp_all only [not_false_eq_true, or_true]
           
-          have GAddEdgeLongWalk : (addEdgeToGraph G s(a, b)).Walk b a := by
+          ---------------
+
+          have LongWalkInGAddEdge : (addEdgeToGraph G s(a, b)).Walk b a := by
+
             sorry
 
+          ---------------
 
-          have LongWalkEdgesInG :  ∀ e ∈ GAddEdgeLongWalk.reverse.edges, e ∈ G.edgeSet := by
+          have LongWalkEdgesInG :  ∀ e ∈ LongWalkInGAddEdge.reverse.edges, e ∈ G.edgeSet := by
+            intro LongWalkEdge LongWalkEdgeInLongWalk     
+            have LongWalkEdgeInGAddEdge : LongWalkEdge ∈ (addEdgeToGraph G s(a, b)).edgeSet := by   
+              apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGAddEdge.reverse at LongWalkEdgeInLongWalk
+              exact LongWalkEdgeInLongWalk                    
+
+            ---------------
+
+            have EdgeNotAB : ¬ LongWalkEdge = s(a,b) := by
+              sorry
+
+            simp [addEdgeToGraph] at LongWalkEdgeInGAddEdge
             sorry
 
+          ----------------
 
-          let LongWalkInG := SimpleGraph.Walk.transfer GAddEdgeLongWalk.reverse G LongWalkEdgesInG
-
-          exact SimpleGraph.Walk.reachable LongWalkInG
+          let LongWalkInG := SimpleGraph.Walk.transfer LongWalkInGAddEdge.reverse G LongWalkEdgesInG
+          exact SimpleGraph.Walk.reachable LongWalkInG  -- conclude the goal as we can transfer the long walk into G showing we have b reachable from a
 
     have GPreconnected : G.Preconnected := by
-      exact reachable_from_all
+      exact ReachableFromAll          -- by the reachable from all proof, we have that G is preconnected
 
     simp [SimpleGraph.connected_iff]
-    simp_all only [and_self]
-  · exact h.1
+    simp_all only [and_self]          -- then finally as G is preconnected and nonempty, we have that G is connected as required
+  · exact h.1                         -- h.1 is the simple acyclic condition mentioned earlier. 
+
 
 -- end of olivia theorems
 
