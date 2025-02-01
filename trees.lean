@@ -5087,7 +5087,6 @@ theorem treeIsMinimallyConnected2 {V : Type} {G : SimpleGraph V} (graphIsTree : 
       refine Eq.symm (Nat.sub_eq_of_eq_add ?h)
       rw [Nat.sub_one_add_one]
       rw [← @SimpleGraph.edgeFinset_card]
-      unfold numberOfEdges
       have myFintypeEquality : h_1 = (Fintype.ofFinite ↑G.edgeSet) := by
         sorry
       exact congrArg Finset.card (congrArg (@SimpleGraph.edgeFinset V G) myFintypeEquality)
