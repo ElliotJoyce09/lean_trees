@@ -1055,28 +1055,53 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
       -- We now need to show that all u and v in G are reachable, and we can do this using the previous results and considering cases where u and/or v = leaf
       intro u v
 
-
+      -- We will consider the cases that either u or v = leaf or neither u nor v are equal to leaf
       by_cases (u = leaf ∨ v = leaf)
+
+        -- First consider the case that either u or v = leaf
       · rename_i u_or_v_is_leaf
+
+        -- Then consider the cases that u = leaf and u ≠ leaf
         by_cases (u = leaf)
+
+          -- So consider the first case: u = leaf
         · rename_i u_is_leaf
+
+          -- Since u = leaf, substitute u with leaf
           subst u
+
+          -- Any vertex (v specifically in this case) is reachable from leaf as in our previous result
           exact
             SimpleGraph.Reachable.symm
               (SimpleGraph.Reachable.mono (fun ⦃v w⦄ a ↦ a) (a_leaf_reachable v))
+
+          -- Now consider the second case: u ≠ leaf
         · rename_i u_not_leaf
 
+          -- Then consider the cases that v = leaf and v ≠ leaf
           by_cases (v = leaf)
+
+            -- So consider the first case: v = leaf
           · rename_i v_is_leaf
+            
+            -- Since u = leaf, substitute u with leaf
             subst v
+
+            -- Any vertex (v specifically in this case) is reachable from leaf as in our previous result
             exact a_leaf_reachable u
+
+            -- Conside the second case that v ≠n leaf
           · rename_i v_not_leaf
+
+            -- So now we have that neither u nor v is equal to leaf
             have u_neq_leaf: ¬ u=leaf → u ≠ leaf := by
               exact fun _ ↦ u_not_leaf
             have v_neq_leaf: ¬ v=leaf → v ≠ leaf := by
               exact fun _ ↦ v_not_leaf
             apply u_neq_leaf at u_not_leaf
             apply v_neq_leaf at v_not_leaf
+
+            -- Because of the fact that u and v ≠ leaf, they are in the set V \ leaf
             have u_in_G' : u ∈ type_to_set V \ {leaf} := by
               exact
                 Set.mem_diff_of_mem trivial
@@ -1085,24 +1110,30 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
               exact
                 Set.mem_diff_of_mem trivial
                   (v_neq_leaf v_not_leaf)
+
+            -- So u and v are in G' 
             have u_in_G'verts : u ∈ ↑G'.verts := by
               exact u_in_G'
             have v_in_G'verts : v ∈ ↑G'.verts := by
               exact v_in_G'
+
+            -- Because u and v are in G', then by previous results they are reachable from each other
             exact all_verts_in_G'_reachable ⟨u,u_in_G'verts⟩ ⟨v,v_in_G'verts⟩
 
-
+        -- Now consider the case that neither u nor v = leaf
       · rename_i u_and_v_are_not_leaf
+
+        -- This case is logically equivalent to ¬ u = leaf and ¬ v = leaf
         have u_and_v_are_not_leaf : (¬ u = leaf) ∧ (¬ v = leaf) := by
           exact not_or.mp u_and_v_are_not_leaf
 
-
-
-
+        -- And so we have u ≠ leaf and v ≠ leaf
         have u_neq_leaf: ¬ u=leaf → u ≠ leaf := by
           exact fun a ↦ a
         have v_neq_leaf: ¬ v=leaf → v ≠ leaf := by
           exact fun a ↦ a
+
+        -- Because of the fact that u and v ≠ leaf, they are in the set V \ leaf
         have u_in_G' : u ∈ type_to_set V \ {leaf} := by
           exact
             Set.mem_diff_of_mem trivial
@@ -1112,78 +1143,106 @@ lemma six_implies_onetwothreefourfive_step_one {V : Type} [Finite V] (G : Simple
             Set.mem_diff_of_mem trivial
               (v_neq_leaf u_and_v_are_not_leaf.2)
 
+        -- So u and v are in G' 
         have u_in_G'verts : u ∈ ↑G'.verts := by
           exact u_in_G'
         have v_in_G'verts : v ∈ ↑G'.verts := by
           exact v_in_G'
+
+        -- Because u and v are in G', then by previous results they are reachable from each other
         exact all_verts_in_G'_reachable ⟨u,u_in_G'verts⟩ ⟨v,v_in_G'verts⟩
 
-
+    -- So all vertices are reaachable from each other so G is preconnected
     exact SimpleGraph.Connected.mk G_preconnected
 
 /-- The Second part of the proof of (6) → (1,2,3,4,5). It is completes the proof that an acyclic graph with one less edge than vertices is a tree-/
 lemma six_implies_onetwothreefourfive_step_two {V : Type} [Finite V] (G : SimpleGraph V) (nonempty : Nonempty V) (g_is_acyclic : isAcyclic G) (CardinalityCondition : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1): isTree G := by
+
   -- Using the cardinality condition, acyclicity and step one to prove that G is a tree
   have g_is_connected : G.Connected := by
+
     -- this is exactly what we proved in step 1
     exact six_implies_onetwothreefourfive_step_one G nonempty g_is_acyclic CardinalityCondition
 
   -- Retrieve the definition of a tree
   unfold isTree
+
   -- We want to show that both conditions of a tree are met, and so we open the cases:
   apply And.intro
   · case left =>
+
       -- g is connected by assumption
       exact g_is_connected
+
   · case right =>
+
       -- g is acyclic by assumption
       exact g_is_acyclic
 
 /-- The proof of (1,2,3,4,5) → (6) It is a proof that a connected acyclic graph has one less edge than it has vertices-/
 lemma onetwothreefourfive_implies_six {V : Type} [Finite V] (G : SimpleGraph V) (G_is_tree : isTree G) (nonempty: Nonempty V)
                                       : (isAcyclic G) ∧ ((Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1) := by
+
   -- We want to show that G is both Acyclic and satisfies the cardinality condition. So we open both cases:
   apply And.intro
+
   · case left =>
+
       -- we create and prove the hypothesis that G is acyclic, using the fact that it is a tree (1) which is connected and acyclic by definition
       have g_is_acyclic : isAcyclic G := by
         unfold isTree at G_is_tree
         simp_all
       exact g_is_acyclic
+
   · case right =>
+
       -- We create and prove the hypothesis that G satisfies the cardinality condition.
       have CardinalityCondition : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1 := by
+
         -- by using (5), we know that any tree satisfies the cardinality condition
         exact onetwothreefour_implies_five G G_is_tree nonempty
       exact CardinalityCondition
 
 /-- The proof of equivalence between (6) and (1,2,3,4,5)-/
 lemma onetwothreefourfive_equiv_six {V : Type} [Finite V] (G : SimpleGraph V) (nonempty: Nonempty V): (isAcyclic G ∧ (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1) = isTree G := by
+
   -- using the defintion of what it means to be a tree (connected and acyclic)
   unfold isTree
+
   -- equality is equivalent to double implication
   simp_all only [eq_iff_iff]
+
   -- to prove double implication we split each implication up into its respective cases
   apply Iff.intro
+
   · intro a
+
     -- we are trying to prove connectivity here:
     simp_all only [and_true]
+
     -- we can extract acyclicity and the cardinality condition from our assumption in this case
     obtain ⟨g_is_acyclic, CardinalityCondition⟩ := a
+
     -- Then plugging in all our assumptions into our previous lemma proves this case
     exact
       six_implies_onetwothreefourfive_step_one G nonempty g_is_acyclic
         CardinalityCondition
+
   · intro a
+
     -- we are trying to prove the cardinality condition here:
     simp_all only [true_and]
+
     -- we can extract acyclicity and connectivity from our assumption in this case
     obtain ⟨g_is_connected, g_is_acyclic⟩ := a
+
     --by these assumptions, G is a tree
     have G_is_tree: isTree G := by
       unfold isTree
       simp_all
+
     -- Then plugging in all our assumptions into our previous lemma proves this case
     have forward : isAcyclic G ∧ (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1 := by
       exact onetwothreefourfive_implies_six G G_is_tree nonempty
     simp_all
+
