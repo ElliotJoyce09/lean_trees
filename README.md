@@ -2,15 +2,29 @@
 
 This repository contains proofs and definitions related to tree equivalence in **Lean 4**.
 
-The theorem to prove:
+**The theorem to prove:**
 The following statements are equivalent for a graph T:
+
+
 (1) T is a tree.
+
+
 (2) Any two vertices in T are connected by a unique path.
+
+
 (3) T is minimally connected, i.e. T is connected but T − e is disconnected for any edge
 e ∈ E(T).
+
+
 (4) T is maximally acyclic, i.e. T is acyclic but T + uv contains a cycle for any two nonadjacent vertices u, v of T.
+
+
 (5) T is connected and |E(T)| = |V (T)| − 1.
+
+
 (6) T is acyclic and |E(T)| = |V (T)| − 1
+
+**The followed proof is from the MA4J3 Lecture Notes**
 
 ## Comments 
 
