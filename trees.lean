@@ -18,6 +18,9 @@ def IsUniquelyConnected {V : Type} (G : SimpleGraph V) : Prop :=
 def IsMinimallyConnected {V: Type} (G: SimpleGraph V) : Prop :=
   ∀ e ∈ G.edgeSet, ¬(G.deleteEdges (↑{e})).Connected
 
+def isUniquePath {V : Type} (u v : V) (G: SimpleGraph V) : Prop :=
+  ∀ (a b : G.Path u v), a = b
+
 /-- A proposition that holds if there exists an element of type V such that there is a cycle containing this element in the given graph G-/
 def hasACycle {V : Type} (G : SimpleGraph V) : Prop :=
   ∃ (u : V), ∃ (p : G.Walk u u), p.IsCycle
