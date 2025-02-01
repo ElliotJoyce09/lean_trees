@@ -15,6 +15,13 @@ I would also like to state that all contributions viewable in the git history at
 
 **Elliot**
 
+Overall, I found proving the required theorems to be quite challenging. As a result, I ultimately relied on the Acyclic package to complete my work. However, I take pride in the fact that the proofs are my own rather than simply adapting examples from the package’s documentation.
+
+In my third theorem, there are two ‘sorry’ statements that I believe are trivial, but I struggled to formally prove them. Despite spending a significant amount of time over the holidays attempting to construct theorems without the Acyclic package, I often found myself going in circles. This wasn’t due to a lack of effort but rather a difficulty in understanding how Lean works at a deeper level.
+
+That said, I am particularly pleased with my work on the addEdgeToGraph and removeEdgeToGraph definitions, especially proving that adding an edge to an empty graph results in P2. The finite nature of these cases made them more intuitive for me to reason through. However, when it came to more abstract proofs, I found that while I could conceptualize them in my head, translating them into Lean proved to be a significant challenge. For example, I understand intuitively that if a graph contains two non-unique paths between the same vertices, it must contain a cycle. This seems almost trivial to me, yet I struggled to formalize it in Lean due to the intricacies of the definition of a cycle. Despite extensive effort, I was unable to reach a satisfactory conclusion.
+
+Because I relied on the Acyclic package, I feel that I don’t deserve the same marks as the other members of my group, as my approach was ultimately an easier one. I also want to acknowledge Daniel’s contributions—he was incredibly helpful to all of us and demonstrated a deep understanding of Lean.
 
 **Olivia**
 
@@ -135,9 +142,9 @@ Explanations for each of my lemmas/theorems/definitions can be found commented a
 - subgraphImpliesLeqEdges** ✅ (Daniel)
 - SetToFinsetToSetEqSet** ✅ (Daniel)
 
-- **minusEmptyGraph** ✅ – The edges not present in the empty graph are the same as the edges present in the complete graph.
-- **emptyGraphToPathGraphOnTwoVertices** ✅ – Adding an edge to the empty graph gives the path graph on two vertices.
-- **maximallyAcyclicP3** ⬜ – The path graph on three vertices is maximally acyclic.
+- **minusEmptyGraph** ✅ (Elliot) – The edges not present in the empty graph are the same as the edges present in the complete graph. 
+- **emptyGraphToPathGraphOnTwoVertices** ✅ (Elliot) – Adding an edge to the empty graph gives the path graph on two vertices.
+- **maximallyAcyclicP3** ⬜ (Elliot) – The path graph on three vertices is maximally acyclic.
 
 ---
 
