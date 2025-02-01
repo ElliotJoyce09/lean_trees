@@ -24,8 +24,6 @@ def isAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
 def isTree {V : Type} (G : SimpleGraph V) : Prop :=
   G.Connected ∧ isAcyclic G
 
--- This section of the project was done by Daniel
-
 /-- Returns the first vertex along a given walk from v to u in a graph G-/
 def secondVertexInWalk {V : Type} (G : SimpleGraph V) {v u : V} (p : G.Walk v u) : V :=
   p.getVert 1
@@ -226,7 +224,7 @@ theorem maximallyAcyclicP3 : isMaximallyAcyclic (SimpleGraph.pathGraph 3) := by
   obtain ⟨vertex, vertexIsRepeated⟩ := aVertexRepeated
   sorry
 
-
+-- This section of the project was done by Daniel
 
 /-- A proof that if two elements are in the element set of a Fintype and they are not equal, then the cardinality of that fintype must be more than one -/
 lemma twoElemsInSetMeansCardGTOne {V : Type} [Finite V] (x y : V) (h : x ≠ y) (h_x : x ∈ (Fintype.ofFinite V).elems) (h_y : y ∈ (Fintype.ofFinite V).elems)
@@ -286,6 +284,7 @@ lemma oneVertexbutEdgeIsFalse {V : Type} [Finite V] (G : SimpleGraph V) (e : Sym
 
     simp_all only [gt_iff_lt, lt_self_iff_false] -- h1 & h3 contradict eachother, so we have accquired the desired result
 
+-- This section of the project was done by Daniel
 /-- A function taking the set of vertices in a connected component of a graph G and forms a subgraph containing all edges in G between the vertices in the conncected component-/
 def connectedComponentToSubGraph {V : Type} [Finite V] (G : SimpleGraph V) (connComponent : Set V): G.Subgraph :=
   { verts := connComponent -- The vertex set is the set of vertices in the component
