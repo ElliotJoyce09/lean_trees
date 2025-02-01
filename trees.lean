@@ -5180,12 +5180,22 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
               subst a_1                                    -- by showing that it must be false that s(a,b)
               simp_all only [SimpleGraph.mem_edgeSet]      -- is in the long path defined on G remove s(a,b)
 
-              ---------------------------
-
               have ShortPathEdgeInLongWalkInGRemAB : s(a,b) ∈ LongWalkInGRemAB.edges := by
-                sorry
-
-              ---------------------------
+                unfold SimpleGraph.Walk.mapLe at LongPathEdgeInLongPath -- unfold and split into two cases
+                rw [← SimpleGraph.Walk.transfer_eq_map_of_le] at LongPathEdgeInLongPath
+                · have asdasf : s(a, b) ∈ ((LongWalkInGRemAB.transfer G ?hp).toPath.1).edges → s(a,b) ∈ (LongWalkInGRemAB.transfer G ?hp).edges := by
+                    sorry
+                  apply asdasf at LongPathEdgeInLongPath
+                  rw [SimpleGraph.Walk.edges_transfer] at LongPathEdgeInLongPath
+                  exact LongPathEdgeInLongPath
+                  
+                · 
+                  intro TempEdge TempEdgeInLongWalkInGRemAB                 -- second  case is to show that the TempEdge is in G.edgeSet
+                  apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at TempEdgeInLongWalkInGRemAB -- get that TempEdge is defined on GRemAB
+                  have GRemABEdgeSetSubset : (G.deleteEdges {s(a, b)}).edgeSet ⊆ G.edgeSet := by
+                    simp_all only [SimpleGraph.edgeSet_subset_edgeSet]      -- show that GRemAB edgeset is a subset of G edgeset as GRemAB subgraph of G
+                  apply GRemABEdgeSetSubset at TempEdgeInLongWalkInGRemAB   -- membership in set A subset of set B implies membership in set B
+                  exact TempEdgeInLongWalkInGRemAB                          -- conclude the goal
 
               apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at ShortPathEdgeInLongWalkInGRemAB
               simp_all only [SimpleGraph.mem_edgeSet, SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff,
