@@ -2,6 +2,16 @@
 
 This repository contains proofs and definitions related to tree equivalence in **Lean 4**.
 
+The theorem to prove:
+The following statements are equivalent for a graph T:
+(1) T is a tree.
+(2) Any two vertices in T are connected by a unique path.
+(3) T is minimally connected, i.e. T is connected but T − e is disconnected for any edge
+e ∈ E(T).
+(4) T is maximally acyclic, i.e. T is acyclic but T + uv contains a cycle for any two nonadjacent vertices u, v of T.
+(5) T is connected and |E(T)| = |V (T)| − 1.
+(6) T is acyclic and |E(T)| = |V (T)| − 1
+
 ## Comments 
 
 **Daniel**
@@ -34,23 +44,8 @@ The github commit history is not entitrely accurate of my contribution to this p
 
 **Krishna**
 
+COMMENT GOES HERE
 
-
-## Definitions
-
-- **hasACycle** ✅ – Determines if the graph has a cycle.
-- **isAcyclic** ✅ – Determines if the graph is acyclic.
-- **nonEdgeSet** ✅ – The set of all edges not present in the graph.
-- **addEdgeToGraph** ✅ – Adds an edge to a graph.
-- **deleteEdgeFromGraph** ✅ – Deletes an edge from a graph.
-- **isMaximallyAcyclic** ✅ – Determines if the graph is maximally acyclic.
-- **isUniquePath** ✅ – Determines if all paths between two vertices in a graph are unique.
-- **Tree** ✅ – Definition of a tree.
-- **putElemInSet** ✅ – Puts an element in a set.
-- **hasLeaf** ✅ - Definition of a Leaf
-- **type_to_set** ✅ - Converting vertices of type V into vertices in a Set V
-- **subgraph_without_vertex_set** ✅ - Defines a Subgraph of a graph without a set of specified vertices
-  
 ## Main Proofs
 
 - **treeImpliesTwoVerticiesConnectedByUniquePath** ✅ (Elliot)  
@@ -171,6 +166,21 @@ Explanations for each of my lemmas/theorems/definitions can be found commented a
 - Finset_subset_and_has_less_elems_implies_not_equal** ✅ (Daniel)
 - subgraphImpliesLeqEdges** ✅ (Daniel)
 - SetToFinsetToSetEqSet** ✅ (Daniel)
+
+
+- **hasACycle** ✅ – Determines if the graph has a cycle.
+- **isAcyclic** ✅ – Determines if the graph is acyclic.
+- **nonEdgeSet** ✅ – The set of all edges not present in the graph.
+- **addEdgeToGraph** ✅ – Adds an edge to a graph.
+- **deleteEdgeFromGraph** ✅ – Deletes an edge from a graph.
+- **isMaximallyAcyclic** ✅ – Determines if the graph is maximally acyclic.
+- **isUniquePath** ✅ – Determines if all paths between two vertices in a graph are unique.
+- **Tree** ✅ – Definition of a tree.
+- **putElemInSet** ✅ – Puts an element in a set.
+- **hasLeaf** ✅ - Definition of a Leaf
+- **type_to_set** ✅ - Converting vertices of type V into vertices in a Set V
+- **subgraph_without_vertex_set** ✅ - Defines a Subgraph of a graph without a set of specified vertices
+
 
 - **any_subgraph_of_an_acyclic_graph_is_acyclic** ✅ (Krishna)
 
