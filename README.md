@@ -21,7 +21,7 @@ In my third theorem, there are two ‘sorry’ statements that I believe are tri
 
 That said, I am particularly pleased with my work on the addEdgeToGraph and removeEdgeToGraph definitions, especially proving that adding an edge to an empty graph results in P2. The finite nature of these cases made them more intuitive for me to reason through. However, when it came to more abstract proofs, I found that while I could conceptualize them in my head, translating them into Lean proved to be a significant challenge. For example, I understand intuitively that if a graph contains two non-unique paths between the same vertices, it must contain a cycle. This seems almost trivial to me, yet I struggled to formalize it in Lean due to the intricacies of the definition of a cycle. Despite extensive effort, I was unable to reach a satisfactory conclusion.
 
-Because I relied on the Acyclic package, I feel that I don’t deserve the same marks as the other members of my group, as my approach was ultimately an easier one. I also want to acknowledge Daniel’s contributions—he was incredibly helpful to all of us and demonstrated a deep understanding of Lean.
+Because I relied on the Acyclic package, I feel that I don’t deserve the same marks as the other members of my group, as my approach was ultimately an easier one. I also want to acknowledge Daniel’s contributions—he was incredibly helpful to all of us and demonstrated a deep understanding of Lean. I also messed up realising at the end I did not prove 3 -> 2, but actually ended up proving 1 -> 3. Again this isn't any of my group members issues, but instead mine.
 
 **Olivia**
 
