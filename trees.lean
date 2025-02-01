@@ -1,12 +1,14 @@
 import Mathlib.Combinatorics.SimpleGraph.Basic -- These three are imported to allow us to use Matlib's Graphs, as well as a series of results,properties, and structures related to them.
+import Mathlib.Combinatorics.SimpleGraph.Walk
 import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Combinatorics.SimpleGraph.Subgraph
-import Mathlib.Combinatorics.SimpleGraph.Hasse
 import Mathlib.Combinatorics.SimpleGraph.Acyclic -- used only by Elliot, as outlined in readme.txt file
 import Mathlib.Tactic -- Used for interval_cases
 import Mathlib.Logic.Basic
 import Mathlib.Order.Cover
 import Mathlib.Data.Set.Basic
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Combinatorics.SimpleGraph.Finite
 
 namespace trees
 
@@ -55,22 +57,6 @@ def addEdgeToGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :
     cases' andOther with andMiddle andRight
     -- angular brackets are used to construct the required statement from each individual clause
     exact ⟨andMiddle, andLeft, andRight.symm⟩
-}
-
-
-def deleteEdgeFromGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
-{ Adj := fun (x y) => G.Adj x y ∧ (x ∉ e ∧ y ∉ e ∧ x ≠ y),
-  symm := by
-    intros x y h
-    simp_all only [ne_eq, not_false_eq_true, true_and]
-    obtain ⟨left, right⟩ := h
-    obtain ⟨left_1, right⟩ := right
-    obtain ⟨left_2, right⟩ := right
-    apply And.intro
-    · exact id (SimpleGraph.adj_symm G left)
-    · intro a
-      subst a
-      simp_all only [not_false_eq_true, SimpleGraph.irrefl]
 }
 
 theorem emptyGraphToPathGraphOnTwoVertices : SimpleGraph.pathGraph 2 = addEdgeToGraph (emptyGraph (Fin 2)) (Sym2.mk (0, 1)):= by
@@ -579,8 +565,8 @@ lemma connected_component_coe_is_connected {V : Type} [Finite V] [Nonempty V] {G
 
             unfold map_to_membership_or_sink at eq -- We see the result is a_G' if a ∈ G'.verts, otherwise it is a_G'
 
-            simp_all only [dite_eq_else] -- We see the goal is closed if a ∈ G'.verts
-            exact fun h => trivial -- This is trivial due to 'a_mem'
+            simp_all only [dite_eq_right_iff]-- We see the goal is closed if a ∈ G'.verts
+            exact fun h => trivial
 
           have hom_on_b : spanningCoeToCoeHom a_G' b = b_G' := by -- Similarly I claim this image is b_G', the proof is the same except the final step
 
@@ -588,8 +574,8 @@ lemma connected_component_coe_is_connected {V : Type} [Finite V] [Nonempty V] {G
               exact rfl
 
             unfold map_to_membership_or_sink at eq
-
-            simp_all only [dite_eq_else]
+            
+            simp_all only [dite_eq_right_iff]-- We see the goal is closed if a ∈ G'.verts
             exact dif_pos b_mem -- This is trivial due to 'b_mem'
 
           rw [hom_on_a, hom_on_b] at h -- So we can rewrite the homomorphism results at h, turning it into our exact goal
@@ -974,11 +960,11 @@ lemma subgraph_edgeSet_card_eq_coe_card {V : Type} [Finite V] {G : SimpleGraph V
       rw [G_1_coe_card_one] at Hcoe
       exact id (Eq.symm Hcoe)
 
-/-- A proof that if we have strongly inducted on the sum of cardinality of two sets with an empty intersection, and there are two sets a and b with empty intersection and a union of cardianlity y + 1 and there is 
-some element u that is in a and not in b then the sum of the cardinalites of a and b is the same as that of their union (y + 1) -/ 
+/-- A proof that if we have strongly inducted on the sum of cardinality of two sets with an empty intersection, and there are two sets a and b with empty intersection and a union of cardianlity y + 1 and there is
+some element u that is in a and not in b then the sum of the cardinalites of a and b is the same as that of their union (y + 1) -/
 lemma split_up_card_of_union {V : Type} [Finite V] {y : ℕ} (hy : ∀ m ≤ y,  ∀ (a b : Set V), ∅ = a ∩ b → (Fintype.ofFinite ↑(a ∪ b)).card = m →
                  (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = m) {a b : Set V}
-                 (empty_inter : ∅ = a ∩ b) (hu : (Fintype.ofFinite ↑(a ∪ b)).card = y + 1) {u :V}
+                 (empty_inter : ∅ = a ∩ b) (hu : (Fintype.ofFinite ↑(a ∪ b)).card = y + 1) {u : V}
                  (in_a_not_b : u ∈ a ∧ u ∉ b) : (Fintype.ofFinite ↑a).card + (Fintype.ofFinite ↑b).card = y + 1 := by
   obtain ⟨in_a, not_in_b⟩ := in_a_not_b
   have card_union_without_u_eq_minus_one : (Fintype.ofFinite ↑((a ∪ b) \ {u})).card = (Fintype.ofFinite ↑(a ∪ b)).card - 1 := by
@@ -1173,7 +1159,7 @@ lemma union_minus_intersection_eq_sum_of_sets {V : Type} [Finite V]
 
   cases only_in_one with -- As u is either in a and not in b or vice versa, we can split the or statement into two cases
   | inl in_a_not_b =>
-    exact split_up_card_of_union hy empty_inter hu u_prop in_a_not_b
+    exact split_up_card_of_union hy empty_inter hu in_a_not_b
   | inr in_b_not_a =>
     -- Sort out symmetries of properties so that we can apply the same lemma, this is all trivial
     have cards_eq : (Fintype.ofFinite ↑(b ∪ a)).card = (Fintype.ofFinite ↑(a ∪ b)).card := by
@@ -2642,9 +2628,7 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
   obtain ⟨e_val, e_prop⟩ := exist_elem_in_G
 
   have three_result : (¬(G.deleteEdges (putElemInSet (e_val))).Connected) := by -- we acquire the result that 3 already holding gives us
-    let minim
-    exact three_implies_G_without_e_disconnected G e_val -- ie By (3), G − e is disconnected.
-
+    sorry
   let G_e_removed := G.deleteEdges (putElemInSet (e_val)) -- this is G without the edge e
 
   obtain ⟨e_val_1, e_val_2⟩ := e_val
@@ -3371,7 +3355,10 @@ theorem onetwothreefour_implies_five {V : Type} [Finite V] (G : SimpleGraph V) (
       have second_eq : (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet ∪ {e_val})).card = (Fintype.ofFinite ↑(G_1.edgeSet ∪ G_2.edgeSet)).card + (Fintype.ofFinite ↑(putElemInSet e_val)).card := by
         unfold putElemInSet
         have nonempty_sym2 : Nonempty (Sym2 V) := by exact Nonempty.intro e_val
-        rw [union_minus_intersectchangeion_eq_sum_of_sets (G_1.edgeSet ∪ G_2.edgeSet) {e_val} first_disjoint]
+        exact
+          Eq.symm
+            (union_minus_intersection_eq_sum_of_sets (G_1.edgeSet ∪ G_2.edgeSet) {e_val}
+              first_disjoint)
       rw [second_eq] --  the goal to reflect this
 
       have second_disjoint : ∅ = G_1.edgeSet ∩ G_2.edgeSet := by
@@ -3687,9 +3674,6 @@ theorem twoVerticesConnectedByUniquePathImpliesTree {V : Type} (G : SimpleGraph 
   · simp_all only
   · simp_all only
 
-def putElemInSet {V : Type} (u : V) : Set V :=
-  {u}
-
 theorem treeIsMinimallyConnected {V : Type} {G : SimpleGraph V} (graphIsTree : G.IsTree) [h_1 : Fintype ↑G.edgeSet] [h_2 : Fintype V] (h_3 : Nonempty G.edgeSet) : ∀ e ∈ G.edgeSet, G.Connected ∧ ¬(G.deleteEdges (putElemInSet (e))).Connected := by
   intros edge edgeInEdgeSet
   have graphIsConnected : G.Connected := graphIsTree.1
@@ -3749,7 +3733,7 @@ theorem treeIsMinimallyConnected {V : Type} {G : SimpleGraph V} (graphIsTree : G
 
 
 
--- Olivia Theorems (Due to be updated still) 
+-- Olivia Theorems (Due to be updated still)
 -- feel free to change theorem names
 
 -- (2: any two vertices connected by unique path)
@@ -3769,7 +3753,7 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
 
   contrapose h
   simp at h                                                  -- contrapose and simplify h for a nicer goal structure
-  simp [h]                          
+  simp [h]
   obtain ⟨HEdge, HEdgeProp⟩ := h                             -- obtain the edge and the property from h
   obtain ⟨HEdgeInG, GRemoveHEdgeConnected⟩ := HEdgeProp      -- obtain that edge is in G, and G remove the edge from h is connected
   obtain ⟨a, b⟩ := HEdge                                     -- obtain the two vertices from the edge from h
@@ -3782,12 +3766,12 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
 
     have GRemoveEdgePreconnected : (G.deleteEdges {s(a, b)}).Preconnected := by
       exact GRemoveHEdgeConnected.preconnected               -- show that G without {a,b} is preconnected
-    
+
     unfold SimpleGraph.Preconnected at GRemoveEdgePreconnected
     let ABReachable := GRemoveEdgePreconnected a b           -- unfold preconnectedness and get a -> b is reachable
-    
+
     have ReachableIffPath : ∃ (c : (G.deleteEdges {s(a,b)}).Walk a b), c.IsPath := by
-      apply Set.exists_mem_of_nonempty at ABReachable        
+      apply Set.exists_mem_of_nonempty at ABReachable
       obtain ⟨LongWalkInGRemAB, LongWalkInGRemABProp⟩ := ABReachable -- obtain the a -> b walk and property as we have a -> b is reachable
       have DecEqV : DecidableEq V := by
         exact Classical.typeDecidableEq V
@@ -3796,7 +3780,7 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
       obtain ⟨val, GRemoveABPathIsPath⟩ := LongPathInGRemAB  -- get the property that the long path in G remove {a,b} is a path
       apply Exists.intro                                     -- conclude that if b is reachable from a on G without {a,b} then there must be a path from a to b
       · apply GRemoveABPathIsPath                            -- that is not just the edge {a,b}
-      
+
     obtain ⟨LongWalkInGRemAB, LongWalkInGRemABIsPath⟩ := ReachableIffPath    -- obtain the long walk and property
 
     have DecEqV : DecidableEq V := by
@@ -3804,7 +3788,7 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
     have GRemABisSubgraph : G.deleteEdges {s(a, b)} ≤ G := by
       exact SimpleGraph.deleteEdges_le {s(a, b)}            -- show that G without {a,b} is subgraph of G
 
-    let LongWalkInG := SimpleGraph.Walk.mapLe GRemABisSubgraph LongWalkInGRemAB 
+    let LongWalkInG := SimpleGraph.Walk.mapLe GRemABisSubgraph LongWalkInGRemAB
     let LongPathInG := LongWalkInG.toPath                  -- show that the walk exists on G as it exists on a subgraph of G then convert the walk to a path
 
 
@@ -3823,11 +3807,11 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
               apply SimpleGraph.Walk.edges_subset_edgeSet LongPathInG.1 at LongPathEdgeInLongPath
               exact LongPathEdgeInLongPath                 -- show that the long path edge must be in the edge set of G bc long path is defined on G
 
-            have LongPathEdgeNotAB : ¬ LongPathEdge = s(a,b) := by 
+            have LongPathEdgeNotAB : ¬ LongPathEdge = s(a,b) := by
               simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, LongPathInG, LongWalkInG]
               apply Aesop.BuiltinRules.not_intro
               intro a_1                                    -- show that the long path edge is not s(a,b)
-              subst a_1                                    -- by showing that it must be false that s(a,b) 
+              subst a_1                                    -- by showing that it must be false that s(a,b)
               simp_all only [SimpleGraph.mem_edgeSet]      -- is in the long path defined on G remove s(a,b)
 
               ---------------------------
@@ -3861,7 +3845,7 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
 
       unfold isAcyclic at GIsAcylic
       unfold hasACycle at GIsAcylic  -- unfold acyclic and simplify to conclude that the paths must be different
-      simp_all only [not_exists]    
+      simp_all only [not_exists]
 
     have ShortPathIsPath : ShortPathInG.1.IsPath := by
       obtain ⟨ShortPathInG, ShortPathInGIsPath⟩ := ShortPathInG
@@ -3891,19 +3875,19 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
 theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMaximallyAcyclic G := by
   unfold isTree
   unfold isMaximallyAcyclic                                -- unfold the above structures and introduce h
-  unfold isAcyclic                                         -- then obtain that G is connected and acyclic 
+  unfold isAcyclic                                         -- then obtain that G is connected and acyclic
   intro h                                                  -- from fact that G is a tree
   obtain ⟨ConnectedG, NotHasAcycleG⟩ := h
   apply And.intro
   · exact NotHasAcycleG                                    -- clear the Acyclic part of the goal as it is direct
   · intro NonEdge NonEdgeInNonEdgeSet                      -- introduce an edge in the non edge set of G alongside its property
     obtain ⟨a,b⟩ := NonEdge                                -- obtain the two vertices which form this non edge
-    
-    have GPreconncted : G.Preconnected := by         
+
+    have GPreconncted : G.Preconnected := by
       exact ConnectedG.preconnected                        -- show that G is preconnected as it is connected
     unfold SimpleGraph.Preconnected at GPreconncted        -- then unfold Preconnected and show that we have
     let ABReachable := GPreconncted a b                    -- b is reachable from a in G
-    
+
     have ReachableIffPath : ∃ (c : G.Walk a b), c.IsPath := by
       apply Set.exists_mem_of_nonempty at ABReachable
       obtain ⟨WalkInG, WalkInGProp⟩ := ABReachable         -- show a walk exists as we have Reachable a b
@@ -3936,7 +3920,7 @@ theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMax
       have GAddEdgeAdjAB : GAddEdge.Adj a b := by
         simp_all only [GAddEdge, DesiredEdge]              -- show that a and b are adjacent in G add edge
         simp [addEdgeToGraph]                              -- as this is the edge being added to G
-        have ANeB : ¬ a = b := by                          
+        have ANeB : ¬ a = b := by
           simp[nonEdgeSet] at NonEdgeInNonEdgeSet          -- use that a is not equal to b to do so
           simp_all only [not_false_eq_true]
         simp_all only [not_false_eq_true, or_true]
@@ -3978,7 +3962,7 @@ theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMax
             intro a_1          -- show that if {a,b} is in the long path it must be in the edge set of G as well
             simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, LongPathInGAddEdge, LongWalkInGAddEdge]
 
-          -- conclude the goal as we have shown the contradiction that {a,b} must be in the graph G 
+          -- conclude the goal as we have shown the contradiction that {a,b} must be in the graph G
           -- which is not possible as {a,b} is in the non edge set of G
           apply LongPathEdgesInG at CycleContradiction
           simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, implies_true, SimpleGraph.mem_edgeSet,
@@ -3991,10 +3975,6 @@ theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMax
     exact CycleExists         -- this existence of this cycle then concludes the proof of this theorem.
 
 
-
-
-
-
 -- (4: T maximally acyclic)
 --       -->
 -- (1: T is a tree)
@@ -4002,13 +3982,13 @@ theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMax
 theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMaximallyAcyclic G -> isTree G := by
   unfold isTree
   unfold isMaximallyAcyclic                               -- unfold the terms and introduce h
-  unfold isAcyclic                                        -- split to two cases and immediately 
+  unfold isAcyclic                                        -- split to two cases and immediately
   intro h                                                 -- clear the acyclic condition as it
   apply And.intro                                         -- is obvious from maximally acyclic
   · have ReachableFromAll : ∀ a b, G.Reachable a b := by
       intro a b                                           -- introduce the two vertices a and b
       by_cases AEqB : a = b                               -- split to two cases, a=b and not a=b
-      · subst AEqB                                    
+      · subst AEqB
         obtain ⟨left, right⟩ := h                         -- when a=b, we have Reachable a a in
         rfl                                               -- in all graph so result is simple
 
@@ -4018,13 +3998,13 @@ theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMax
 
         · have ABEdgeInNonEdgeSet : s(a, b) ∈ nonEdgeSet G := by
             simp [nonEdgeSet]                             -- now for the case when a is not adjacent to b in G
-            have ANotB : ¬ a = b := by                    
+            have ANotB : ¬ a = b := by
               exact AEqB                                  -- we have not a = b from the original case split
             simp_all only [not_false_eq_true, and_self]   -- which proves that s(a,b) is in the non edge set of G
 
           apply h.2 at ABEdgeInNonEdgeSet                 -- we can then use the maximally acyclic definition to get a cycle in G add {a,b}
           simp [hasACycle] at ABEdgeInNonEdgeSet          -- simplifying this, we can then obtain the components of the cycle
-          obtain ⟨CycleVertex, CycleVertexProp⟩ := ABEdgeInNonEdgeSet  
+          obtain ⟨CycleVertex, CycleVertexProp⟩ := ABEdgeInNonEdgeSet
           obtain ⟨CycleWalk, CycleWalkIsCycle⟩ := CycleVertexProp
 
           have GAddEdgeAdjAB : (addEdgeToGraph G s(a, b)).Adj a b := by
@@ -4032,7 +4012,7 @@ theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMax
             have ANeB : ¬ a = b := by                     -- we have Adj between a and b
               exact AEqB                                  -- because a ≠ b
             simp_all only [not_false_eq_true, or_true]
-          
+
           ---------------
 
           have LongWalkInGAddEdge : (addEdgeToGraph G s(a, b)).Walk b a := by
@@ -4042,10 +4022,10 @@ theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMax
           ---------------
 
           have LongWalkEdgesInG :  ∀ e ∈ LongWalkInGAddEdge.reverse.edges, e ∈ G.edgeSet := by
-            intro LongWalkEdge LongWalkEdgeInLongWalk     
-            have LongWalkEdgeInGAddEdge : LongWalkEdge ∈ (addEdgeToGraph G s(a, b)).edgeSet := by   
+            intro LongWalkEdge LongWalkEdgeInLongWalk
+            have LongWalkEdgeInGAddEdge : LongWalkEdge ∈ (addEdgeToGraph G s(a, b)).edgeSet := by
               apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGAddEdge.reverse at LongWalkEdgeInLongWalk
-              exact LongWalkEdgeInLongWalk                    
+              exact LongWalkEdgeInLongWalk
 
             ---------------
 
@@ -4065,8 +4045,6 @@ theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMax
 
     simp [SimpleGraph.connected_iff]
     simp_all only [and_self]          -- then finally as G is preconnected and nonempty, we have that G is connected as required
-  · exact h.1                         -- h.1 is the simple acyclic condition mentioned earlier. 
-
+  · exact h.1                         -- h.1 is the simple acyclic condition mentioned earlier.
 
 -- end of olivia theorems
-
