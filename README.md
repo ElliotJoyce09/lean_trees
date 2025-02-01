@@ -25,7 +25,9 @@ Because I relied on the Acyclic package, I feel that I don’t deserve the same 
 
 **Olivia**
 
-I am pleased with how this project has turned out. The final result of this proof strongly resembles the plan we had laid out for it, with all objectives in my section as well as the group as a whole being complete and satisfactory. Throughout the project I have become stronger at using lean of course, with a lot of focus on SimpleGraphs, Walks, Paths and a bit on Subgraphs and transferance. During term 1 I worked alongside Elliot to set up a lot of the definitions and lemmas which we would then need for our theorems, and then since the break we have worked more independently on our individual theorems as laid out in the planning section.
+I am pleased with how this project has turned out. The final result of this proof strongly resembles the plan we had laid out for it, with all objectives in my section as well as the group as a whole being complete and satisfactory. Throughout the project I have become stronger at using lean of course, with a lot of focus on SimpleGraphs, Walks, Paths and a bit on Subgraphs and transferance. During term 1 I worked alongside Elliot to set up a lot of the definitions and lemmas which we would then need for our theorems, and then since the break we have worked more independently on our individual theorems as laid out in the planning section. 
+
+I have also left a couple of 'sorry' statements in my theorems on what I believe to be relatively minor results that just won't drop out correctly when trying to solve them despite numerous hours spent trying. These 'sorry' statements are strictly my own and nobody else in the group should lose marks for these should you believe the statements deserve to be penalised. 
 
 The github commit history is not entitrely accurate of my contribution to this project. As Elliot and myself worked together during term 1, it was only Elliot who added anything to the github during this time. My work includes the work done with Elliot in setting up definitions and lemmas as well as the proofs of Unique Path -> Minimally Connected, Tree -> Maximally Acyclic, and Maximally Acyclic -> Tree, the three of which should hopefully be accurately listed as sections which I personally have added to the code. (Theorems start on line xxxx of Lean file)
 
@@ -56,14 +58,22 @@ The github commit history is not entitrely accurate of my contribution to this p
   _Any two vertices in T being connected by a unique path implies T is a tree._  
   (_Proved using `SimpleGraph.Acyclic`._)
 
-- **twoVerticesConnectedByUniquePathImpliesMinimallyConnected** ⬜ (Olivia)  
-  _Any two vertices in T being connected by a unique path implies T is minimally connected._
-
 - **treeIsMinimallyConnected** ✅ (Elliot)  
   _T is minimally connected implies T is a tree._  
   (_Proved using `SimpleGraph.Acyclic`. Contains two `sorry` statements, likely due to definitional equivalence._)
 
-- **(Olivia's Proofs)** ⬜ ⬜
+
+**(Olivia's Proofs)** 
+- **twoVerticesConnectedByUniquePathImpliesMinimallyConnected** ✅ (Olivia)  
+  _Any two vertices in T being connected by a unique path implies T is minimally connected._
+
+- **TreeIsMaximallyAcyclic** ✅ (Olivia)  
+  _Any graph which is a tree is maximally acyclic, meaning if any edge not currently in the edge set is added to
+  the graph, then the graph will contain a cycle._
+
+- **MaximallyAcyclicIsTree** ✅ (Olivia)  
+  _Any graph which is maximally acylic is a tree, meaning that the graph is connected and acylic._
+  
 
 **(Daniel's Proofs)**
 - **onetwothreefour_implies_five** ✅ (Daniel)
