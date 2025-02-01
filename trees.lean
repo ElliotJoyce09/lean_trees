@@ -5188,22 +5188,39 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
               subst a_1                                    -- by showing that it must be false that s(a,b)
               simp_all only [SimpleGraph.mem_edgeSet]      -- is in the long path defined on G remove s(a,b)
 
+
               have ShortPathEdgeInLongWalkInGRemAB : s(a,b) ∈ LongWalkInGRemAB.edges := by
-                unfold SimpleGraph.Walk.mapLe at LongPathEdgeInLongPath -- unfold and split into two cases
-                rw [← SimpleGraph.Walk.transfer_eq_map_of_le] at LongPathEdgeInLongPath
-                · have asdasf : s(a, b) ∈ ((LongWalkInGRemAB.transfer G ?hp).toPath.1).edges → s(a,b) ∈ (LongWalkInGRemAB.transfer G ?hp).edges := by
-                    sorry
-                  apply asdasf at LongPathEdgeInLongPath
-                  rw [SimpleGraph.Walk.edges_transfer] at LongPathEdgeInLongPath
-                  exact LongPathEdgeInLongPath
+                have LongWalkInGRemABEdgesInG : ∀ e ∈ LongWalkInGRemAB.edges, e ∈ G.edgeSet := by
+                  intro e eprop                    -- show all edges in LongWalkInGRemAB are in GRemAB as that is the graph the walk is defined on                
+                  apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at eprop  
+
+                  have AllEdgeInGAlsoInGAddEdge : ∀ x y : V, (G.deleteEdges {s(a, b)}).Adj x y → G.Adj x y := by
+                    intro x y a_1                 -- show all edges in GRemAB are edges in G
+                    simp_all only [SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, Sym2.eq, Sym2.rel_iff',
+                      Prod.mk.injEq, Prod.swap_prod_mk, not_or, not_and]
                   
-                · 
-                  intro TempEdge TempEdgeInLongWalkInGRemAB                 -- second  case is to show that the TempEdge is in G.edgeSet
-                  apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at TempEdgeInLongWalkInGRemAB -- get that TempEdge is defined on GRemAB
-                  have GRemABEdgeSetSubset : (G.deleteEdges {s(a, b)}).edgeSet ⊆ G.edgeSet := by
-                    simp_all only [SimpleGraph.edgeSet_subset_edgeSet]      -- show that GRemAB edgeset is a subset of G edgeset as GRemAB subgraph of G
-                  apply GRemABEdgeSetSubset at TempEdgeInLongWalkInGRemAB   -- membership in set A subset of set B implies membership in set B
-                  exact TempEdgeInLongWalkInGRemAB                          -- conclude the goal
+                  obtain ⟨x,y⟩ := e               -- use above to show that all edges in the walk are in G as required
+                  apply AllEdgeInGAlsoInGAddEdge at eprop   
+                  simp_all only [SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, Sym2.eq, Sym2.rel_iff',
+                    Prod.mk.injEq, Prod.swap_prod_mk, not_or, not_and, and_imp, implies_true, SimpleGraph.mem_edgeSet]
+
+                unfold SimpleGraph.Walk.mapLe at LongPathEdgeInLongPath  -- revert the mapping of the path to get where the edges are defined on
+                rw [← SimpleGraph.Walk.transfer_eq_map_of_le LongWalkInGRemAB LongWalkInGRemABEdgesInG GRemABisSubgraph] at LongPathEdgeInLongPath
+                have asdasf : (LongWalkInGRemAB.transfer G LongWalkInGRemABEdgesInG).edges = LongWalkInGRemAB.edges := by
+                  exact SimpleGraph.Walk.edges_transfer LongWalkInGRemAB LongWalkInGRemABEdgesInG
+                rw [← asdasf] 
+
+                --------------------
+
+                have ToPath1IsNormal : (LongWalkInGRemAB.transfer G LongWalkInGRemABEdgesInG).toPath.1 = LongWalkInGRemAB.transfer G LongWalkInGRemABEdgesInG := by
+                  sorry -- this statement is saying that using toPath to convert a walk to a path, 
+                  -- and then .1 to return the path to a walk is equivalent to having done nothing
+                  -- which is intuitely correct however seems to be a overly complicated result to prove.
+
+                --------------------
+
+                rw [ToPath1IsNormal] at LongPathEdgeInLongPath
+                exact LongPathEdgeInLongPath -- conclude the goal as we have shown the exact existence required
 
               apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at ShortPathEdgeInLongWalkInGRemAB
               simp_all only [SimpleGraph.mem_edgeSet, SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff,
