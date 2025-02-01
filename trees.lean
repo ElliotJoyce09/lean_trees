@@ -3,12 +3,12 @@ import Mathlib.Combinatorics.SimpleGraph.Walk
 import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Combinatorics.SimpleGraph.Subgraph
 import Mathlib.Combinatorics.SimpleGraph.Acyclic -- used only by Elliot, as outlined in readme.txt file
+import Mathlib.Combinatorics.SimpleGraph.Hasse -- used only by Elliot
 import Mathlib.Tactic -- Used for interval_cases
 import Mathlib.Logic.Basic
 import Mathlib.Order.Cover
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Fintype.Basic
-import Mathlib.Combinatorics.SimpleGraph.Finite
 
 namespace trees
 
