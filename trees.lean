@@ -1,7 +1,11 @@
 import Mathlib.Combinatorics.SimpleGraph.Basic -- These three are imported to allow us to use Matlib's Graphs, as well as a series of results,properties, and structures related to them.
 import Mathlib.Combinatorics.SimpleGraph.Path
 import Mathlib.Combinatorics.SimpleGraph.Subgraph
+import Mathlib.Combinatorics.SimpleGraph.Acyclic -- used only by Elliot, as outlined in readme.txt file
 import Mathlib.Tactic -- Used for interval_cases
+import Mathlib.Logic.Basic
+import Mathlib.Order.Cover
+import Mathlib.Data.Set.Basic
 
 namespace trees
 
@@ -27,10 +31,215 @@ def secondVertexInWalk {V : Type} (G : SimpleGraph V) {v u : V} (p : G.Walk v u)
 def putElemInSet {V : Type} (u : V) : Set V :=
   {u}
 
-/-- This is a stand in for the actual proof, which is not assigned to me-/
-lemma three_implies_G_without_e_disconnected {V : Type} [Finite V] (G : SimpleGraph V) (e : Sym2 V)
- : ¬(G.deleteEdges (putElemInSet (e))).Connected  := by
+def nonEdgeSet {V : Type} (G : SimpleGraph V) :=
+  (completeGraph V).edgeSet \ G.edgeSet
+
+theorem minusEmptyGraph {V : Type} : nonEdgeSet (emptyGraph V) = (completeGraph V).edgeSet := by
+  simp [nonEdgeSet]
+
+def addEdgeToGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
+{ Adj := fun (x y) => G.Adj x y ∨ (x ∈ e ∧ y ∈ e ∧ x ≠ y),
+  symm := by
+    -- introduce the vertices of the adjacency relation, x and y, and also the adjacency relation itself, function
+    intros x y function
+    -- splits the or statement into two: that x and y are adjacent, or x and y are in the edge added to the graph and not the same as each other
+    cases' function with adjacency and
+    left
+    -- there is symmetry of adjacency
+    apply G.adj_symm
+    exact adjacency
+    right
+    -- splits the and statement by the first logical and symbol on the left
+    cases' and with andLeft andOther
+    cases' andOther with andMiddle andRight
+    -- angular brackets are used to construct the required statement from each individual clause
+    exact ⟨andMiddle, andLeft, andRight.symm⟩
+}
+
+
+def deleteEdgeFromGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
+{ Adj := fun (x y) => G.Adj x y ∧ (x ∉ e ∧ y ∉ e ∧ x ≠ y),
+  symm := by
+    intros x y h
+    simp_all only [ne_eq, not_false_eq_true, true_and]
+    obtain ⟨left, right⟩ := h
+    obtain ⟨left_1, right⟩ := right
+    obtain ⟨left_2, right⟩ := right
+    apply And.intro
+    · exact id (SimpleGraph.adj_symm G left)
+    · intro a
+      subst a
+      simp_all only [not_false_eq_true, SimpleGraph.irrefl]
+}
+
+theorem emptyGraphToPathGraphOnTwoVertices : SimpleGraph.pathGraph 2 = addEdgeToGraph (emptyGraph (Fin 2)) (Sym2.mk (0, 1)):= by
+  -- x and y are two elements of the set Fin 2 i.e. {0, 1}
+  ext x y
+  simp [SimpleGraph.pathGraph, addEdgeToGraph]
+  -- to show both sides of the if and only if statement, both directions are proved individually
+  apply Iff.intro
+  -- retrieve that x and y are adjacent to each other
+  intro adjacency
+  -- there are two cases, either x is less than y i.e. (x, y) = (0, 1), or y is less than x i.e. (x, y) = (1, 0)
+  cases' adjacency with xLessThanY yLessThanX
+  -- showing that if x is less than y then x is 0 and y is 1
+  have xLessThanEquivalentTo : x = 0 ∧ y = 1 := by
+    -- there are two cases for x, 0 or 1
+    fin_cases x
+    -- there are two cases for y, 0 or 1
+    fin_cases y
+    simp at xLessThanY
+    cases' xLessThanY with zeroLessThanZero implication
+    -- zero is not less than zero, so we have a contradiction
+    contradiction
+    exact Prod.mk.inj_iff.mp rfl
+    -- there are two cases for y, 0 or 1
+    fin_cases y
+    simp at xLessThanY
+    cases' xLessThanY with oneLessThanZero implication
+    -- one is not less than zero, so we have a contradiction
+    contradiction
+    cases' xLessThanY with oneLessThanOne implication
+    -- one is not less than one, so we have a contradiction
+    contradiction
+  simp [xLessThanEquivalentTo]
+  have yLessThanEquivalentTo : x = 1 ∧ y = 0 := by
+    -- there are two cases for x, 0 or 1
+    fin_cases x
+    -- there are two cases for y, 0 or 1
+    fin_cases y
+    simp at yLessThanX
+    cases' yLessThanX with zeroLessThanZero implication
+    -- zero is not less than zero, so we have a contradiction
+    contradiction
+    cases' yLessThanX with oneLessThanZero implication
+    -- one is not less than zero, so we have a contradiction
+    contradiction
+    -- there are two cases for y, 0 or 1
+    fin_cases y
+    exact Prod.mk.inj_iff.mp rfl
+    simp at yLessThanX
+    cases' yLessThanX with oneLessThanOne implication
+    -- one is not less than one, so we have a contradiction
+    contradiction
+  -- this is the end of one direction of the proof
+
+  simp [yLessThanEquivalentTo]
+  -- this is the relation given by the addEdgeToGraph definition
+  intro relation
+  -- splits the and statement by the first logical and symbol on the left
+  cases' relation with andLeft andOther
+  cases' andOther with andMiddle andRight
+  -- splits the or statement into two
+  cases' andLeft with xEqualsZero xEqualsOne
+  cases' andMiddle with yEqualsZero yEqualsOne
+  -- this cannot be true as x and y are both 0, so we cannot have either x is less than y nor y is less than x
+  exfalso
+  apply andRight
+  -- substitute the variables into the goal
+  subst xEqualsZero
+  subst yEqualsZero
+  -- 0 = 0 so just a simple rfl
+  rfl
+  -- takes the left clause of the or statement, can see that is the one that holds
+  left
+  -- substitute the variables into the goal
+  subst xEqualsZero
+  subst yEqualsOne
+  apply covBy_of_eq_or_eq
+  -- zero is less than one is already proved
+  exact Fin.zero_lt_one
+  -- changes the goal to for all c less than or equal to 1 in Fin 2, c is either 0 or 1
+  simp
+  intro element
+  intro elementLessThanOrEqualOne
+  -- proving that if the element is in Fin 2 and less than or equal to 1, then it is either 0 or 1
+  have elementLessThanEquivalentTo : element = 0 ∨ element = 1 := by
+    fin_cases element
+    -- zero equals zero so proved left clause of the or statement
+    exact Equiv.eq_or_eq_of_swap_apply_ne_self fun a ↦ andRight (id (Eq.symm a))
+    -- one equals one so proved right clause of the or statement
+    exact Equiv.eq_or_eq_of_swap_apply_ne_self andRight
+  simp [elementLessThanEquivalentTo]
+  cases' andMiddle with yEqualsZero yEqualsOne
+  -- takes the right clause of the or statement, can see that is the one that holds
+  right
+  -- substitute the variables into the goal
+  subst yEqualsZero
+  subst xEqualsOne
+  apply covBy_of_eq_or_eq
+  -- zero is less than one is already proved
+  exact Fin.zero_lt_one
+  simp
+  intro element
+  intro elementLessThanOrEqualOne
+  have elementLessThanEquivalentTo : element = 0 ∨ element = 1 := by
+    fin_cases element
+    -- zero equals zero so proved left clause of or statement
+    exact Equiv.eq_or_eq_of_swap_apply_ne_self andRight
+    -- one equals one so proved right clause of or statement
+    exact Equiv.eq_or_eq_of_swap_apply_ne_self fun a ↦ andRight (id (Eq.symm a))
+  simp [elementLessThanEquivalentTo]
+  -- this cannot be truse as both x and y are 1 so cannot have neither x is less than y, nor y is less than x
+  exfalso
+  apply andRight
+  -- substitute the variables into the goal
+  subst xEqualsOne
+  subst yEqualsOne
+  -- 1 = 1 so a simple rfl
+  rfl
+
+def deleteEdgeFromGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
+{ Adj := fun (x y) => G.Adj x y ∧ (x ∉ e ∧ y ∉ e ∧ x ≠ y),
+  symm := by
+    intros x y function
+    simp_all only [ne_eq, not_false_eq_true, true_and]
+    obtain ⟨adjacency, function⟩ := function
+    obtain ⟨andLeft,andOther⟩ := function
+    obtain ⟨andMiddle, andRight⟩ := andOther
+    apply And.intro
+    · exact id (SimpleGraph.adj_symm G adjacency)
+    · intro equivalence
+      subst equivalence
+      simp_all only [not_false_eq_true, SimpleGraph.irrefl]
+}
+
+def isMaximallyAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
+  ¬hasACycle G ∧ (∀ e ∈ nonEdgeSet G, hasACycle (addEdgeToGraph G e))
+
+theorem maximallyAcyclicP3 : isMaximallyAcyclic (SimpleGraph.pathGraph 3) := by
+  apply And.intro
+  unfold hasACycle
+  simp
+  intro x h
+  intro i
+  fin_cases x
+  simp at h
+  cases' i with isACircuit tailContainsNoDuplicates
+  rw [@SimpleGraph.Walk.isCircuit_def] at isACircuit
+  simp at isACircuit
+  obtain ⟨isATrail, isNotAPath⟩ := isACircuit
+  rw [@SimpleGraph.Walk.isTrail_def] at isATrail
+  rw [← @SimpleGraph.Walk.isPath_iff_eq_nil] at isNotAPath
+  rw [← @SimpleGraph.Walk.isTrail_def] at isATrail
+  -- we use the fact that it is a trail to show no edges are repeated
+  have noEdgesRepeated : ∀ e ∈ h.edges, Multiset.count e h.edges = 1 := by
+    intro h1 h2
+    refine Multiset.count_eq_one_of_mem ?d h2
+    simp
+    exact isATrail.edges_nodup
+  -- we use the fact it is not a path to show a vertex has to be repeated
+  have aVertexRepeated : ∃ v : (Fin 3), Multiset.count v h.support > 1 := by
+    contrapose! isNotAPath
+    simp at isNotAPath
+    rw [@SimpleGraph.Walk.isPath_def]
+    exact List.nodup_iff_count_le_one.mpr isNotAPath
+  -- NEED TO SHOW THAT A VERTEX REPEATED IMPLIES AN EDGE IS REPEATED ON A PATH GRAPH ON 3 VERTICIES
+  -- COULD TRY THAT IF IT IS IN THE SUPPORT OF A WALK, THEN THERE IS AN EDGE GOING TO/FROM IT
+  obtain ⟨vertex, vertexIsRepeated⟩ := aVertexRepeated
   sorry
+
+
 
 /-- A proof that if two elements are in the element set of a Fintype and they are not equal, then the cardinality of that fintype must be more than one -/
 lemma twoElemsInSetMeansCardGTOne {V : Type} [Finite V] (x y : V) (h : x ≠ y) (h_x : x ∈ (Fintype.ofFinite V).elems) (h_y : y ∈ (Fintype.ofFinite V).elems)
@@ -3433,6 +3642,108 @@ theorem five_implies_onetwothreefour {V : Type} [Finite V] (G : SimpleGraph V) (
 
 -- End of Dan Theorems
 
+-- Elliot Theorems
+
+def easyTree {V: Type} (G : SimpleGraph V) : Prop :=
+  G.Connected ∧ G.IsAcyclic
+
+theorem treeImpliesTwoVerticiesConnectedByUniquePath {V : Type} (G : SimpleGraph V) : easyTree G → ∀ (u v : V), isUniquePath G := by
+  unfold easyTree
+  unfold isUniquePath
+  intro tree
+  cases' tree with connected acyclic
+  apply SimpleGraph.isAcyclic_iff_path_unique.mp at acyclic
+  intros u v
+  exact acyclic
+
+theorem twoVerticesConnectedByUniquePathImpliesTree {V : Type} (G : SimpleGraph V) [h : Nonempty V]: (∀ u v : V, isUniquePath G) → (∀ u v : V, ∃ (p : G.Path u v), True) → easyTree G := by
+  unfold isUniquePath
+  unfold easyTree
+  intros uniquePath
+  intros existsPath
+  apply And.intro
+  rw [@SimpleGraph.connected_iff]
+  apply And.intro
+  unfold SimpleGraph.Preconnected
+  unfold SimpleGraph.Reachable
+  let ⟨x⟩ := h
+  intros u v
+  by_cases h_1 : u = v
+  subst h_1
+  exact instNonemptyOfInhabited
+  obtain ⟨p, True⟩ := existsPath u v
+  exact ⟨p⟩
+  exact h
+  rw [SimpleGraph.isAcyclic_iff_path_unique]
+  intro v w p q
+  simp_all only [Subtype.forall, Subtype.mk.injEq]
+  obtain ⟨val, property⟩ := p
+  obtain ⟨val_1, property_1⟩ := q
+  simp_all only [Subtype.mk.injEq]
+  apply uniquePath
+  · exact v
+  · exact v
+  · simp_all only
+  · simp_all only
+
+def putElemInSet {V : Type} (u : V) : Set V :=
+  {u}
+
+theorem treeIsMinimallyConnected {V : Type} {G : SimpleGraph V} (graphIsTree : G.IsTree) [h_1 : Fintype ↑G.edgeSet] [h_2 : Fintype V] (h_3 : Nonempty G.edgeSet) : ∀ e ∈ G.edgeSet, G.Connected ∧ ¬(G.deleteEdges (putElemInSet (e))).Connected := by
+  intros edge edgeInEdgeSet
+  have graphIsConnected : G.Connected := graphIsTree.1
+  have graphWithoutEdgeIsDisconnected : ¬(G.deleteEdges (putElemInSet edge)).Connected := by
+    apply Aesop.BuiltinRules.not_intro
+    intro h
+    unfold putElemInSet at h
+    apply SimpleGraph.IsTree.card_edgeFinset at graphIsTree
+    let numberOfVertices := Fintype.card V
+    let numberOfEdges := G.edgeFinset.card
+    have vertexCount : numberOfEdges + 1 = numberOfVertices := graphIsTree
+    have edgeCount : numberOfEdges = numberOfVertices - 1 := by
+      exact Nat.eq_sub_of_add_eq graphIsTree
+    let graphWithEdgeRemoved := G.deleteEdges {edge}
+    have cardinalityEquality : (Fintype.ofFinite ↑(G.edgeSet \ {edge})).card = (Fintype.ofFinite ↑G.edgeSet).card - 1 := by
+      simp [← Set.toFinset_card]
+      have decidableEquation : DecidableEq (Sym2 V) := by
+        exact Classical.typeDecidableEq (Sym2 V)
+      rw [Set.toFinset_diff]
+      rw [Finset.card_sdiff]
+      rw [Set.toFinset_singleton]
+      rw [Finset.card_singleton]
+      have myCardCongruency {x y} (a : Fintype x) (b : Fintype y) (h : x ≃ y) : Fintype.card x = Fintype.card y := by
+        exact Fintype.card_congr h
+      have myFintype : Fintype ↑G.edgeSet := by
+        exact Fintype.ofFinite ↑G.edgeSet
+      have myFintypeEquality : h_1 = myFintype := by
+        sorry
+      have myCardinalityEquality : myFintype.card = (Fintype.ofFinite ↑G.edgeSet).card := by
+        rw [myCardCongruency]
+        rfl
+      rw [Set.toFinset_card]
+      simp [myCardCongruency]
+      simp [← myCardinalityEquality]
+      exact congrFun (congrArg HSub.hSub (congrArg (@Fintype.card ↑G.edgeSet) myFintypeEquality)) 1
+      rw [Set.toFinset_singleton]
+      rw [Set.subset_toFinset]
+      rw [Finset.coe_singleton]
+      rw [Set.singleton_subset_iff]
+      exact edgeInEdgeSet
+    have edgeCard : Fintype.card ↑G.edgeSet = G.edgeFinset.card := by
+      exact Eq.symm SimpleGraph.edgeFinset_card
+    have edgeCountAfterRemoval : (Fintype.ofFinite ↑(G.edgeSet \ {edge})).card = numberOfEdges - 1 := by
+      rw [cardinalityEquality]
+      refine Eq.symm (Nat.sub_eq_of_eq_add ?h)
+      rw [Nat.sub_one_add_one]
+      rw [← @SimpleGraph.edgeFinset_card]
+      unfold numberOfEdges
+      have myFintypeEquality : h_1 = (Fintype.ofFinite ↑G.edgeSet) := by
+        sorry
+      exact congrArg Finset.card (congrArg (@SimpleGraph.edgeFinset V G) myFintypeEquality)
+      simp
+  exact ⟨graphIsConnected, graphWithoutEdgeIsDisconnected⟩
+
+-- End of Elliot Theorems
 
 
 
