@@ -47,7 +47,10 @@ The github commit history is not entitrely accurate of my contribution to this p
 - **isUniquePath** ✅ – Determines if all paths between two vertices in a graph are unique.
 - **Tree** ✅ – Definition of a tree.
 - **putElemInSet** ✅ – Puts an element in a set.
-
+- **hasLeaf** ✅ - Definition of a Leaf
+- **type_to_set** ✅ - Converting vertices of type V into vertices in a Set V
+- **subgraph_without_vertex_set** ✅ - Defines a Subgraph of a graph without a set of specified vertices
+  
 ## Main Proofs
 
 - **treeImpliesTwoVerticiesConnectedByUniquePath** ✅ (Elliot)  
@@ -89,7 +92,24 @@ The github commit history is not entitrely accurate of my contribution to this p
   _The proof of (5) → (1,2,3,4). If a graph G on a finite vertex set is connected and has one less edge than it does vertices, then it is a tree._
 
 
-- **(Krisha's Proofs)** ⬜ ⬜
+**(Krisha's Proofs)**
+
+- **onetwothreefourfive_implies_six** ✅ (Krishna)
+  
+  _The proof of (1,2,3,4,5) → (6). It is a proof that a connected acyclic graph has one less edge than it has vertices_
+
+- **six_implies_onetwothreefourfive_step_one** ✅ (Krishna)
+  
+  _The First part of the proof of (6) → (1,2,3,4,5). It a proof that an acyclic graph with one less edge than vertices is Connected_
+  
+- **six_implies_onetwothreefourfive_step_two** ✅ (Krishna)
+  
+  _The Second part of the proof of (6) → (1,2,3,4,5). It is completes the proof that an acyclic graph with one less edge than vertices is a tree_
+
+- **onetwothreefourfive_equiv_six** ✅ (Krishna)
+  
+  _The proof of equivalence between (6) and (1,2,3,4,5)_
+ 
 
 ## Other Theorems
 
@@ -151,6 +171,13 @@ Explanations for each of my lemmas/theorems/definitions can be found commented a
 - Finset_subset_and_has_less_elems_implies_not_equal** ✅ (Daniel)
 - subgraphImpliesLeqEdges** ✅ (Daniel)
 - SetToFinsetToSetEqSet** ✅ (Daniel)
+
+- **any_subgraph_of_an_acyclic_graph_is_acyclic** ✅ (Krishna)
+
+_Most of my other lemmas are simply have statements in my code as they weren't particularly useful to anyone else_
+
+- **acyclic_graphs_have_a_leaf** ✅ (Krishna) - This result has not been proven as the proof uses zorn's lemma which is very set theoretic and out of the scope of this project. I have given a rough 80 line layout on how the proof could be done on lean to demonstrate provability without using other packages.
+
 
 - **minusEmptyGraph** ✅ (Elliot) – The edges not present in the empty graph are the same as the edges present in the complete graph. 
 - **emptyGraphToPathGraphOnTwoVertices** ✅ (Elliot) – Adding an edge to the empty graph gives the path graph on two vertices.
