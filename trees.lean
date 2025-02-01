@@ -12,6 +12,12 @@ import Mathlib.Data.Fintype.Basic
 
 namespace trees
 
+def IsUniquelyConnected {V : Type} (G : SimpleGraph V) : Prop :=
+  ∀ (a b : V), isUniquePath a b G
+
+def IsMinimallyConnected {V: Type} (G: SimpleGraph V) : Prop :=
+  ∀ e ∈ G.edgeSet, ¬(G.deleteEdges (↑{e})).Connected
+
 /-- A proposition that holds if there exists an element of type V such that there is a cycle containing this element in the given graph G-/
 def hasACycle {V : Type} (G : SimpleGraph V) : Prop :=
   ∃ (u : V), ∃ (p : G.Walk u u), p.IsCycle
