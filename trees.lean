@@ -5086,9 +5086,14 @@ theorem treeIsMinimallyConnected2 {V : Type} {G : SimpleGraph V} (graphIsTree : 
 theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquelyConnected G -> IsMinimallyConnected G := by
   intro h                                                    -- introduce h
   let h' := h                                                -- make a copy of h to get Acyclic from it
+  let h'' := h
 
   simp [IsUniquelyConnected] at h                            -- simplify h as well as the goal
   simp [IsMinimallyConnected]
+
+  apply twoVerticesConnectedByUniquePathImpliesTree at h'    -- apply theorem 2->1 to obtain Acyclic
+  simp [IsTree] at h'                                        -- from h' for later use in the proof
+  obtain ⟨TreeConnected, TreeAcyclic⟩ := h'                  -- no circlular logic as 2->1 does not rely on this
 
   contrapose h
   simp at h                                                  -- contrapose and simplify h for a nicer goal structure
@@ -5097,7 +5102,10 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
   obtain ⟨HEdgeInG, GRemoveHEdgeConnected⟩ := HEdgeProp      -- obtain that edge is in G, and G remove the edge from h is connected
   obtain ⟨a, b⟩ := HEdge                                     -- obtain the two vertices from the edge from h
 
-  have NotUniquePath : ¬ isUniquePath a b G := by
+  unfold IsUniquelyConnected at h''
+  obtain ⟨StartingPath, StartingPathProp⟩ := h'' a b
+
+  have NotUniquePath : ¬ isUniquePath a b G StartingPath := by
     unfold isUniquePath                                      -- get to not ∀ a b which are paths, a = b
     simp [not_forall]                                        -- replace not forall with exists to search for existence
     rw [SimpleGraph.mem_edgeSet] at HEdgeInG                 -- replace edge ∈ G.edgeSet with G.Adj a b
@@ -5153,30 +5161,39 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
               subst a_1                                    -- by showing that it must be false that s(a,b)
               simp_all only [SimpleGraph.mem_edgeSet]      -- is in the long path defined on G remove s(a,b)
 
+
               have ShortPathEdgeInLongWalkInGRemAB : s(a,b) ∈ LongWalkInGRemAB.edges := by
+                have LongWalkInGRemABEdgesInG : ∀ e ∈ LongWalkInGRemAB.edges, e ∈ G.edgeSet := by
+                  intro e eprop                    -- show all edges in LongWalkInGRemAB are in GRemAB as that is the graph the walk is defined on
+                  apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at eprop
 
+                  have AllEdgeInGAlsoInGAddEdge : ∀ x y : V, (G.deleteEdges {s(a, b)}).Adj x y → G.Adj x y := by
+                    intro x y a_1                 -- show all edges in GRemAB are edges in G
+                    simp_all only [SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, Sym2.eq, Sym2.rel_iff',
+                      Prod.mk.injEq, Prod.swap_prod_mk, not_or, not_and]
 
-                --unfold SimpleGraph.Walk.mapLe at LongPathEdgeInLongPath -- unfold and split into two case
+                  obtain ⟨x,y⟩ := e               -- use above to show that all edges in the walk are in G as required
+                  apply AllEdgeInGAlsoInGAddEdge at eprop
+                  simp_all only [SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, Sym2.eq, Sym2.rel_iff',
+                    Prod.mk.injEq, Prod.swap_prod_mk, not_or, not_and, and_imp, implies_true, SimpleGraph.mem_edgeSet]
 
-                have asldj : ∀ e ∈ LongWalkInGRemAB.edges, e ∈ G.edgeSet := by
-                  sorry
-                unfold SimpleGraph.Walk.mapLe at LongPathEdgeInLongPath -- unfold and split into two case
-                rw [← SimpleGraph.Walk.transfer_eq_map_of_le LongWalkInGRemAB asldj GRemABisSubgraph] at LongPathEdgeInLongPath
-
-                have asdasf : (LongWalkInGRemAB.transfer G asldj).edges = LongWalkInGRemAB.edges:= by
-                  exact SimpleGraph.Walk.edges_transfer LongWalkInGRemAB asldj
+                unfold SimpleGraph.Walk.mapLe at LongPathEdgeInLongPath  -- revert the mapping of the path to get where the edges are defined on
+                rw [← SimpleGraph.Walk.transfer_eq_map_of_le LongWalkInGRemAB LongWalkInGRemABEdgesInG GRemABisSubgraph] at LongPathEdgeInLongPath
+                have asdasf : (LongWalkInGRemAB.transfer G LongWalkInGRemABEdgesInG).edges = LongWalkInGRemAB.edges := by
+                  exact SimpleGraph.Walk.edges_transfer LongWalkInGRemAB LongWalkInGRemABEdgesInG
                 rw [← asdasf]
 
-                sorry
-                --   sorry -- removed s(a, b) ∈ ((LongWalkInGRemAB.transfer G ?hp).toPath.1).edges →
-                -- have skshdljkas : (↑(LongWalkInGRemAB.transfer G ?hp).toPath).edges = LongWalkInGRemAB.edges := by
+                --------------------
 
-                -- rw [← asdasf]
+                have ToPath1IsNormal : (LongWalkInGRemAB.transfer G LongWalkInGRemABEdgesInG).toPath.1 = LongWalkInGRemAB.transfer G LongWalkInGRemABEdgesInG := by
+                  sorry -- this statement is saying that using toPath to convert a walk to a path,
+                  -- and then .1 to return the path to a walk is equivalent to having done nothing
+                  -- which is intuitely correct however seems to be a overly complicated result to prove.
 
-                -- -- apply asdasf at LongPathEdgeInLongPath
-                -- rw [SimpleGraph.Walk.edges_transfer ↑(LongWalkInGRemAB.transfer G ?hp)] at LongPathEdgeInLongPath
-                -- exact asdasf
-                -- --exact LongPathEdgeInLongPath
+                --------------------
+
+                rw [ToPath1IsNormal] at LongPathEdgeInLongPath
+                exact LongPathEdgeInLongPath -- conclude the goal as we have shown the exact existence required
 
               apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGRemAB at ShortPathEdgeInLongWalkInGRemAB
               simp_all only [SimpleGraph.mem_edgeSet, SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff,
@@ -5197,7 +5214,7 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
             SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, not_true_eq_false, and_false, LongPathInG, LongWalkInG]
 
       have GIsAcylic : isAcyclic G := by
-        sorry
+        exact TreeAcyclic          -- use the property from the very start to state that G must be acyclic
 
       unfold isAcyclic at GIsAcylic
       unfold hasACycle at GIsAcylic  -- unfold acyclic and simplify to conclude that the paths must be different
@@ -5211,12 +5228,16 @@ theorem uniquePathImpliesMinConnected {V : Type} (G : SimpleGraph V): IsUniquely
       obtain ⟨LongPathInG, LongPathInGIsPath⟩ := LongPathInG
       exact LongPathInGIsPath       -- show that the long path is a path in G
 
-    exists ShortPathInG             -- by the existence of the short path and the long path
-    exists ShortPathIsPath          -- which have been proven to be different from each other
-    exists LongPathInG              -- it is concluded that there is not a unique path from a to b
+    have short_eq_start : ShortPathInG = StartingPath := by -- show we cant have short=long=starting
+      exact StartingPathProp ShortPathInG                   -- without at least 2 different paths
+    have long_eq_start : LongPathInG = StartingPath := by   -- concluding the uniqueness goal
+      exact StartingPathProp LongPathInG
+    have long_eq_short : ShortPathInG = LongPathInG := by
+      rw [short_eq_start, long_eq_start]
 
-  exists a                          -- the existence of a and b then concludes this theorem
-  exists b                          -- as proving this was the final contraposed goal.
+    exact False.elim (PathsDifferent (congrArg Subtype.val long_eq_short))
+
+  exists a        -- the existence of a then concludes this theorem.
 
 
 
@@ -5259,14 +5280,15 @@ theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMax
       let DesiredEdge := Quot.mk (Sym2.Rel V) (a, b)       -- define the edge to be added
       let GAddEdge := addEdgeToGraph G DesiredEdge         -- define the graph G add edge
 
-      ------------
-
       have GSubgraphOfGAddEdge : G ≤ addEdgeToGraph G DesiredEdge := by
-        simp_all only [addEdgeToGraph]                     -- show that G is a subgraph of G add edge
-        simp_all [DesiredEdge]
-        sorry
-
-      ------------
+        rw [← SimpleGraph.edgeSet_subset_edgeSet]          -- first show that if G subgraph of G add edge, then G edgeset subset of G add edge subset
+        have AllEdgeInGAlsoInGAddEdge : ∀ x y : V, G.Adj x y → (addEdgeToGraph G DesiredEdge).Adj x y := by
+          intro x y                                        -- show that all Adj in G are also in G add edge
+          simp [addEdgeToGraph]                            -- simp addEdgeToGraph to break it into G.Adj ∨ 'rest'
+          intro a_1                                        -- implication follows easily
+          simp_all only [Sym2.mem_iff, true_or, DesiredEdge]
+        simp_all only [SimpleGraph.edgeSet_subset_edgeSet, ge_iff_le, DesiredEdge]
+        exact AllEdgeInGAlsoInGAddEdge                     -- all adj means G edgeset subset of G add edge edgeset as required
 
       have DecEqV : DecidableEq V := by
         exact Classical.typeDecidableEq V
@@ -5301,16 +5323,183 @@ theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMax
               apply SimpleGraph.Walk.edges_subset_edgeSet LongPathInGAddEdge.1.reverse at LongPathEdgeInLongPath
               exact LongPathEdgeInLongPath                  -- show that the long path edge is in the edge set of G add {a,b} as the long path is defined on G add {a,b}
 
-            ----------------
+            have LongPathEdgeNotDesiredEdge : ¬ LongPathEdge = DesiredEdge := by
+              simp_all only [Bool.false_eq_true, eq_iff_iff, iff_false, SimpleGraph.Walk.edges_reverse,
+                List.mem_reverse, GAddEdge, LongPathInGAddEdge, LongWalkInGAddEdge]
+              apply Aesop.BuiltinRules.not_intro
+              intro a_1
+              subst a_1                                    -- show that the desired edge is not the long path edge
+              simp_all only [SimpleGraph.mem_edgeSet]
 
-            have EdgeNotDesiredEdge : ¬ LongPathEdge = DesiredEdge := by
-              sorry
+              have DesiredEdgeEqAB : DesiredEdge = s(a,b) := by
+                simp_all only [Bool.false_eq_true, eq_iff_iff, iff_false, SimpleGraph.Walk.edges_reverse,
+                  List.mem_reverse, GAddEdge, DesiredEdge, LongPathInGAddEdge, LongWalkInGAddEdge] -- show that the desired edge can be of form s(a,b)
 
-            simp_all only [Bool.false_eq_true, eq_iff_iff, iff_false, SimpleGraph.Walk.edges_reverse,
-              List.mem_reverse, GAddEdge, DesiredEdge, LongPathInGAddEdge, LongWalkInGAddEdge]
-            sorry
+              have DesiredEdgeInLongPathInG : DesiredEdge ∈ LongPathInG.edges := by
+                have LongWalkInGInGAddEdge : ∀ e ∈ LongPathInG.edges, e ∈ (addEdgeToGraph G s(a,b)).edgeSet := by
+                  intro e eprop                    -- show all edges in LongWalkInG are in G as that is the graph the walk is defined on
+                  apply SimpleGraph.Walk.edges_subset_edgeSet LongPathInG at eprop
 
-          ------------------
+                  have AllEdgeInGAlsoInGAddEdge : ∀ x y : V, G.Adj x y → (addEdgeToGraph G s(a,b)).Adj x y := by
+                    intro x y a_1                  -- all edges are in G add {a,b} as well as G is a subgraph of G add {a,b}
+                    simp_all only [SimpleGraph.mem_edgeSet, DesiredEdge]
+                    obtain ⟨val, property⟩ := LongPathInGAddEdge
+                    obtain ⟨val_1, property_1⟩ := ShortPathInGAddEdge
+                    simp_all only [GAddEdge, DesiredEdge]
+                    apply GSubgraphOfGAddEdge
+                    simp_all only
+
+                  obtain ⟨x,y⟩ := e               -- use above to show that all edges in the walk are in G as required
+                  apply AllEdgeInGAlsoInGAddEdge at eprop
+                  simp_all only [SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, Sym2.eq, Sym2.rel_iff',
+                    Prod.mk.injEq, Prod.swap_prod_mk, not_or, not_and, and_imp, implies_true, SimpleGraph.mem_edgeSet]
+
+
+                unfold SimpleGraph.Walk.mapLe at LongPathEdgeInLongPath  -- revert the mapping of the path to get where the edges are defined on
+                rw [← SimpleGraph.Walk.transfer_eq_map_of_le LongPathInG LongWalkInGInGAddEdge GSubgraphOfGAddEdge] at LongPathEdgeInLongPath
+                have asdasf : (LongPathInG.transfer (addEdgeToGraph G s(a,b)) LongWalkInGInGAddEdge).edges = LongPathInG.edges := by
+                  exact SimpleGraph.Walk.edges_transfer LongPathInG LongWalkInGInGAddEdge
+                rw [← asdasf]
+
+                --------------------
+
+                have ToPath1IsNormal : (LongPathInG.transfer (addEdgeToGraph G s(a,b)) LongWalkInGInGAddEdge).toPath.1 = LongPathInG.transfer (addEdgeToGraph G s(a,b)) LongWalkInGInGAddEdge := by
+                  sorry -- this statement is saying that using toPath to convert a walk to a path,
+                  -- and then .1 to return the path to a walk is equivalent to having done nothing
+                  -- which is intuitely correct however seems to be a overly complicated result to prove.
+
+                --------------------
+
+                rw [ToPath1IsNormal] at LongPathEdgeInLongPath
+                exact LongPathEdgeInLongPath -- conclude the goal as we have shown the exact existence required
+
+              apply SimpleGraph.Walk.edges_subset_edgeSet LongPathInG at DesiredEdgeInLongPathInG
+              simp_all only [SimpleGraph.mem_edgeSet, DesiredEdge]
+
+            have GAddEdgeEdgeSet : (addEdgeToGraph G DesiredEdge).edgeSet = G.edgeSet ∪ {DesiredEdge} := by
+
+              have AllEdgeInGAddEdgeInGOrAB : ∀ x y : V, (addEdgeToGraph G s(a,b)).Adj x y → G.Adj x y ∨ (x = a ∨ x = b) ∧ (y = a ∨ y = b) ∧ ¬x = y := by
+                intro x y                                       -- all edges in G Add {a,b} are in G or satisfy second condition of GAddEdge
+                simp [addEdgeToGraph]                           -- follows directly from AddEdgeToGraph
+
+              have AllEdgeInGAlsoInGAddEdge : ∀ x y : V, G.Adj x y → (addEdgeToGraph G s(a,b)).Adj x y := by
+                intro x y                                       -- show that all Adj in G are also in G add edge
+                simp [addEdgeToGraph]                           -- simp addEdgeToGraph to break it into G.Adj ∨ 'rest'
+                intro a_1                                       -- implication follows easily
+                simp_all only [Sym2.mem_iff, true_or]
+
+              have XYABInGAddedge : ∀ x y : V, (x = a ∨ x = b) ∧ (y = a ∨ y = b) ∧ ¬x = y → (addEdgeToGraph G s(a,b)).Adj x y := by
+                intro x y                                       -- show that if the second condition of addEdgeToGraph is true
+                simp [addEdgeToGraph]                           -- then there is an adjacency between x and y
+                intro a_1 a_2 a_3
+                simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, not_false_eq_true, and_self, or_true]
+
+              have GOrABSubSetGAddAB : G.edgeSet ∪ {s(a,b)} ⊆ (addEdgeToGraph G s(a,b)).edgeSet := by
+
+                -- show that edges of G or {a,b} is a subset of G add {a,b} by showing G is subset and {a,b} is subset
+
+                have GSubsetGAddAB : G.edgeSet ⊆ (addEdgeToGraph G s(a,b)).edgeSet := by
+                  simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                    List.mem_reverse, and_imp, SimpleGraph.edgeSet_subset_edgeSet]
+
+
+                have ABSubsetGAddAB : {s(a,b)} ⊆ (addEdgeToGraph G s(a,b)).edgeSet := by
+                  simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                    List.mem_reverse, and_imp, SimpleGraph.edgeSet_subset_edgeSet, Set.singleton_subset_iff,
+                    SimpleGraph.mem_edgeSet]          -- {a,b} is subset of G add {a,b} by adjacency implication above
+                  simp_all only [Bool.false_eq_true, eq_iff_iff, iff_false, true_or, or_true, GAddEdge, DesiredEdge,
+                    LongPathInGAddEdge, LongWalkInGAddEdge]
+                  obtain ⟨val, property⟩ := LongPathInGAddEdge
+                  obtain ⟨val_1, property_1⟩ := ShortPathInGAddEdge
+                  simp_all only [true_or, or_true, GAddEdge, DesiredEdge]
+                  exact GAddEdgeAdjAB
+
+                exact Set.union_subset GSubsetGAddAB ABSubsetGAddAB -- union the two above statements to close the goal
+
+              have GAddABSubsetGOrAB : (addEdgeToGraph G s(a,b)).edgeSet ⊆ G.edgeSet ∪ {s(a,b)} := by
+
+                -- show that the edges of G add {a,b} is a subset of the edges of G or {a,b}
+
+                have EdgeInGAddEdgeImp : ∀ e ∈ (addEdgeToGraph G s(a,b)).edgeSet, e ∈ G.edgeSet ∨ e = s(a,b) := by
+                  intro e eprop             -- show this by setting up a membership condition for any edge in G add {a,b}
+                  obtain ⟨x,y⟩ := e
+
+                  -------------------
+
+                  have XYABMeansEdgeIsAB : ((x = a ∨ x = b) ∧ (y = a ∨ y = b) ∧ ¬x = y) → e = s(a,b) := by
+                    sorry -- needs to be shown that the x y = a b condition implies that the edge is s(a,b)
+                    -- however it will not drop out cleanly at all due to a 'typeclass instance problem is stuck,
+                    -- it is often due to metavariables' error when trying to set s(a,b) up as a set.
+
+                  -------------------
+
+                  simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                    List.mem_reverse, and_imp, Set.union_singleton, SimpleGraph.mem_edgeSet, Sym2.eq, Sym2.rel_iff',
+                    Prod.mk.injEq, Prod.swap_prod_mk]
+
+                  simp [addEdgeToGraph] at eprop                    -- a lot of simplification and casing to show that
+                  cases eprop with                                  -- if edge is in G add edge then either we have G.adj
+                  | inl h => simp_all only [true_or]                -- which means edge is in G
+                  | inr h_1 =>                                      -- or alternatively we have the x y = a b condition
+                    simp_all only [not_false_eq_true, true_implies] -- which from above we know means that the edge is s(a,b)
+                    subst XYABMeansEdgeIsAB                         -- proving the result as required
+                    obtain ⟨left_1, right_1⟩ := h_1
+                    obtain ⟨left_2, right_1⟩ := right_1
+                    cases left_1 with
+                    | inl h =>
+                      cases left_2 with
+                      | inl h_1 =>
+                        subst h h_1
+                        simp_all only [not_true_eq_false]
+                      | inr h_2 =>
+                        subst h_2 h
+                        simp_all only [not_false_eq_true, and_self, false_and, or_false, or_true]
+                    | inr h_1 =>
+                      cases left_2 with
+                      | inl h =>
+                        subst h_1 h
+                        simp_all only [and_self, or_true]
+                      | inr h_2 =>
+                        subst h_1 h_2
+                        simp_all only [not_true_eq_false]
+
+                -----------------
+
+                have MembershipSubsetEquality : (∀ e ∈ (addEdgeToGraph G s(a, b)).edgeSet, e ∈ G.edgeSet ∨ e = s(a, b)) = ((addEdgeToGraph G s(a, b)).edgeSet ⊆ G.edgeSet ∪ {s(a, b)}) := by
+                  sorry -- another problem to do with 'typeclass instance problem is stuck, it is often due to metavariables'
+                  -- when trying to set s(a,b) up as a set. This is just showing that if e = s(a,b) then e ∈ {s(a,b)}, but
+                  -- cannot be completed properly due to that error which I am unsure how to fix.
+
+                -----------------
+
+                simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                  List.mem_reverse, and_imp, Set.union_singleton, eq_iff_iff, iff_true] -- conclude the goal from the proofs above
+
+              simp_all only [Bool.false_eq_true, eq_iff_iff, iff_false, SimpleGraph.Walk.edges_reverse,
+                List.mem_reverse, and_imp, Set.union_singleton, GAddEdge, DesiredEdge, LongPathInGAddEdge,
+                LongWalkInGAddEdge]
+              obtain ⟨val, property⟩ := LongPathInGAddEdge
+              obtain ⟨val_1, property_1⟩ := ShortPathInGAddEdge
+              simp_all only [GAddEdge, DesiredEdge]
+              ext x : 1
+              simp_all only [Set.mem_insert_iff]
+              apply Iff.intro
+              · intro a_1
+                apply GAddABSubsetGOrAB
+                simp_all only
+              · intro a_1
+                cases a_1 with
+                | inl h =>
+                  subst h
+                  simp_all only [SimpleGraph.mem_edgeSet, true_or, or_true]
+                  exact GAddEdgeAdjAB
+                | inr h_1 =>
+                  apply GOrABSubSetGAddAB
+                  simp_all only [Set.mem_insert_iff, or_true]
+
+            simp_all only [Bool.false_eq_true, eq_iff_iff, iff_false, SimpleGraph.Walk.edges_reverse, List.mem_reverse,
+              Set.union_singleton, Set.mem_insert_iff, false_or, GAddEdge, DesiredEdge, LongPathInGAddEdge,
+              LongWalkInGAddEdge]
 
 
           let LongPathInG := SimpleGraph.Walk.transfer LongPathInGAddEdge.1.reverse G LongPathEdgesInG
@@ -5329,6 +5518,8 @@ theorem TreeIsMaximallyAcyclic {V: Type} {G : SimpleGraph V} : isTree G -> isMax
       exists CombinedWalk     -- there is a walk from a to a, where the walk is also a cycle
 
     exact CycleExists         -- this existence of this cycle then concludes the proof of this theorem.
+
+
 
 
 -- (4: T maximally acyclic)
@@ -5370,28 +5561,148 @@ theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMax
             simp_all only [not_false_eq_true, or_true]
 
           ---------------
-
-          have LongWalkInGAddEdge : (addEdgeToGraph G s(a, b)).Walk b a := by
-
-            sorry
+          have LongWalkInGAddEdgeNoAB : ∃ w : (addEdgeToGraph G s(a, b)).Walk b a, s(a,b) ∉ w.edges := by
+            sorry  -- show there exists a walk from b to a which does not include {a,b}
+            -- by obtaining the cycle found earlier and showing it exists including {a,b}
+            -- and so {a,b} may be removed from the cycle to produce the desired result.
+            -- problem here is that it introduces circluar logic as proving that the cycle
+            -- includes {a,b} requires proof that u can reach b from a in order to form the cycle
+            -- which is overall goal of this section so cannot be used as proof.
 
           ---------------
+          obtain ⟨LongWalkInGAddEdge, LongWalkInGAddEdgeProp⟩ := LongWalkInGAddEdgeNoAB
 
           have LongWalkEdgesInG :  ∀ e ∈ LongWalkInGAddEdge.reverse.edges, e ∈ G.edgeSet := by
             intro LongWalkEdge LongWalkEdgeInLongWalk
             have LongWalkEdgeInGAddEdge : LongWalkEdge ∈ (addEdgeToGraph G s(a, b)).edgeSet := by
               apply SimpleGraph.Walk.edges_subset_edgeSet LongWalkInGAddEdge.reverse at LongWalkEdgeInLongWalk
-              exact LongWalkEdgeInLongWalk
-
-            ---------------
+              exact LongWalkEdgeInLongWalk                      -- the walk is in the edge set of G add {a,b} as this is where it was defined
 
             have EdgeNotAB : ¬ LongWalkEdge = s(a,b) := by
-              sorry
+              simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse]
+              apply Aesop.BuiltinRules.not_intro                -- prove that the walks edge is not {a,b}
+              intro a
+              subst a
+              simp_all only [not_true_eq_false]
 
-            simp [addEdgeToGraph] at LongWalkEdgeInGAddEdge
-            sorry
 
-          ----------------
+            have GAddEdgeEdgeSet : (addEdgeToGraph G s(a,b)).edgeSet = G.edgeSet ∪ {s(a,b)} := by
+
+              have AllEdgeInGAddEdgeInGOrAB : ∀ x y : V, (addEdgeToGraph G s(a,b)).Adj x y → G.Adj x y ∨ (x = a ∨ x = b) ∧ (y = a ∨ y = b) ∧ ¬x = y := by
+                intro x y                                       -- all edges in G Add {a,b} are in G or satisfy second condition of GAddEdge
+                simp [addEdgeToGraph]                           -- follows directly from AddEdgeToGraph
+
+              have AllEdgeInGAlsoInGAddEdge : ∀ x y : V, G.Adj x y → (addEdgeToGraph G s(a,b)).Adj x y := by
+                intro x y                                       -- show that all Adj in G are also in G add edge
+                simp [addEdgeToGraph]                           -- simp addEdgeToGraph to break it into G.Adj ∨ 'rest'
+                intro a_1                                       -- implication follows easily
+                simp_all only [Sym2.mem_iff, true_or]
+
+              have XYABInGAddedge : ∀ x y : V, (x = a ∨ x = b) ∧ (y = a ∨ y = b) ∧ ¬x = y → (addEdgeToGraph G s(a,b)).Adj x y := by
+                intro x y                                       -- show that if the second condition of addEdgeToGraph is true
+                simp [addEdgeToGraph]                           -- then there is an adjacency between x and y
+                intro a_1 a_2 a_3
+                simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, not_false_eq_true, and_self, or_true]
+
+              have GOrABSubSetGAddAB : G.edgeSet ∪ {s(a,b)} ⊆ (addEdgeToGraph G s(a,b)).edgeSet := by
+
+                -- show that edges of G or {a,b} is a subset of G add {a,b} by showing G is subset and {a,b} is subset
+
+                have GSubsetGAddAB : G.edgeSet ⊆ (addEdgeToGraph G s(a,b)).edgeSet := by
+                  simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                    List.mem_reverse, and_imp, SimpleGraph.edgeSet_subset_edgeSet]
+                  obtain ⟨left, right⟩ := h           -- G is subset of G Add {a,b} by edge implication above
+                  exact AllEdgeInGAlsoInGAddEdge
+
+                have ABSubsetGAddAB : {s(a,b)} ⊆ (addEdgeToGraph G s(a,b)).edgeSet := by
+                  simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                    List.mem_reverse, and_imp, SimpleGraph.edgeSet_subset_edgeSet, Set.singleton_subset_iff,
+                    SimpleGraph.mem_edgeSet]          -- {a,b} is subset of G add {a,b} by adjacency implication above
+
+                exact Set.union_subset GSubsetGAddAB ABSubsetGAddAB -- union the two above statements to close the goal
+
+              have GAddABSubsetGOrAB : (addEdgeToGraph G s(a,b)).edgeSet ⊆ G.edgeSet ∪ {s(a,b)} := by
+
+                -- show that the edges of G add {a,b} is a subset of the edges of G or {a,b}
+
+                have EdgeInGAddEdgeImp : ∀ e ∈ (addEdgeToGraph G s(a,b)).edgeSet, e ∈ G.edgeSet ∨ e = s(a,b) := by
+                  intro e eprop             -- show this by setting up a membership condition for any edge in G add {a,b}
+                  obtain ⟨x,y⟩ := e
+
+                  -------------------
+
+                  have XYABMeansEdgeIsAB : ((x = a ∨ x = b) ∧ (y = a ∨ y = b) ∧ ¬x = y) → e = s(a,b) := by
+                    sorry -- needs to be shown that the x y = a b condition implies that the edge is s(a,b)
+                    -- however it will not drop out cleanly at all due to a 'typeclass instance problem is stuck,
+                    -- it is often due to metavariables' error when trying to set s(a,b) up as a set.
+
+                  -------------------
+
+                  simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                    List.mem_reverse, and_imp, Set.union_singleton, SimpleGraph.mem_edgeSet, Sym2.eq, Sym2.rel_iff',
+                    Prod.mk.injEq, Prod.swap_prod_mk]
+
+                  simp [addEdgeToGraph] at eprop                    -- a lot of simplification and casing to show that
+                  cases eprop with                                  -- if edge is in G add edge then either we have G.adj
+                  | inl h => simp_all only [true_or]                -- which means edge is in G
+                  | inr h_1 =>                                      -- or alternatively we have the x y = a b condition
+                    simp_all only [not_false_eq_true, true_implies] -- which from above we know means that the edge is s(a,b)
+                    subst XYABMeansEdgeIsAB                         -- proving the result as required
+                    obtain ⟨left_1, right_1⟩ := h_1
+                    obtain ⟨left_2, right_1⟩ := right_1
+                    cases left_1 with
+                    | inl h =>
+                      cases left_2 with
+                      | inl h_1 =>
+                        subst h h_1
+                        simp_all only [not_true_eq_false]
+                      | inr h_2 =>
+                        subst h_2 h
+                        simp_all only [not_false_eq_true, and_self, false_and, or_false, or_true]
+                    | inr h_1 =>
+                      cases left_2 with
+                      | inl h =>
+                        subst h_1 h
+                        simp_all only [and_self, or_true]
+                      | inr h_2 =>
+                        subst h_1 h_2
+                        simp_all only [not_true_eq_false]
+
+                -----------------
+
+                have MembershipSubsetEquality : (∀ e ∈ (addEdgeToGraph G s(a, b)).edgeSet, e ∈ G.edgeSet ∨ e = s(a, b)) = ((addEdgeToGraph G s(a, b)).edgeSet ⊆ G.edgeSet ∪ {s(a, b)}) := by
+                  sorry -- another problem to do with 'typeclass instance problem is stuck, it is often due to metavariables'
+                  -- when trying to set s(a,b) up as a set. This is just showing that if e = s(a,b) then e ∈ {s(a,b)}, but
+                  -- cannot be completed properly due to that error which I am unsure how to fix.
+
+                -----------------
+
+                simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                  List.mem_reverse, and_imp, Set.union_singleton, eq_iff_iff, iff_true] -- conclude the goal from the proofs above
+
+              simp_all only [or_false, or_true, not_false_eq_true, and_self, SimpleGraph.Walk.edges_reverse,
+                List.mem_reverse, and_imp, Set.union_singleton]
+              obtain ⟨left, right⟩ := h
+              ext x : 1                            -- simplification and casing to show thaat if
+              simp_all only [Set.mem_insert_iff]   -- A ⊆ B and B ⊆ A, then A = B as required
+              apply Iff.intro                      -- concluding the proof that the edgeSet of
+              · intro a                            -- G add {a,b} is equal to the edge set of G
+                apply GAddABSubsetGOrAB            -- unioned with the edge {a,b}
+                simp_all only
+              · intro a
+                cases a with
+                | inl h =>
+                  subst h
+                  simp_all only [SimpleGraph.mem_edgeSet, or_false, or_true, not_false_eq_true]
+                | inr h_1 =>
+                  apply GOrABSubSetGAddAB
+                  simp_all only [Set.mem_insert_iff, or_true]
+
+            -- looking back relatively far now, we can now use the proven statements that the path edges are in G add {a,b}
+            -- along with that all edges in G add {a,b} are either in G or are {a,b} themselves, plus finally, the fact that
+            -- the path edges are not {a,b} to prove that the path edges must be in G.
+            simp_all only [SimpleGraph.Walk.edges_reverse, List.mem_reverse, Set.union_singleton, Set.mem_insert_iff,
+              false_or]
 
           let LongWalkInG := SimpleGraph.Walk.transfer LongWalkInGAddEdge.reverse G LongWalkEdgesInG
           exact SimpleGraph.Walk.reachable LongWalkInG  -- conclude the goal as we can transfer the long walk into G showing we have b reachable from a
