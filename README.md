@@ -25,6 +25,7 @@ e ∈ E(T).
 (6) T is acyclic and |E(T)| = |V (T)| − 1
 
 **The followed proof is from the MA4J3 Lecture Notes**
+_With the exception of the proof of (1,2,3,4,5) => (6)_
 
 ## Comments 
 
