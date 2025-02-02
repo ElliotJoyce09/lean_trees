@@ -58,7 +58,12 @@ The github commit history is not entitrely accurate of my contribution to this p
 
 **Krishna**
 
-COMMENT GOES HERE
+All in all I am quite satisfied with the quality of the parts I completed in this project. I was successfully able to prove the equivalence relation assigned to me along with a few supporting lemmas. I had a massive hiccup halfway through the project with the realisation that formalising concepts involving a countable number of connected components was going to be an extremely complicated undertaking on lean 4. As a result of this, I had to completely rethink the proof of 'six_implies_onetwothreefourfive_step_one' and stray away from the direction provided by the MA4J3 lecture notes. I then came up with an inductive proof that required various other lemmas. I was very pleased with myself, considering I encountered a pretty difficult obstacle and was able to overcome it in what I would consider a pretty creative way.
+
+The one weakness in my proof would be my assumption of a lemma claiming that any acyclic graph has a leaf. The proof of this lemma required the use of maximal chains in set theory, which would have a maximal element, and then adapting graph theory notation for that. Since this was a very set theoretic proof, I thought it strayed quite a bit away from the topics we were concerned with, thus it is considered beyond the scope of this project. Nevertheless, I have laid out a proof in notes on the code and a possible direction one may take to prove this formally in lean - just adding 'sorry's to the parts which would require further thinking and use of the Set library in Mathlib more extensively.
+
+I would say the project for me was a huge learning curve. I went from spending 10-15 hours combing through mathlib and other sources but making very little progress, to proving large chunks of my proofs in one sitting. By the end, I would consider myself somewhat proficient, to the point where I feel like I use lean (or logical) tactics in casual debates with my friends to formally prove a point. I am pleased with how my quarter of the project turned out, especially considering how it started out. I have about 1350 lines of code that can be attributed to me, that successfully prove what I have set out to prove (ie: they compile just fine in lean). My contributions should also be accurately represented on the git history.
+
 
 ## Main Proofs
 
