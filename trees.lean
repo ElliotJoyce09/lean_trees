@@ -48,9 +48,11 @@ def IsMinimallyConnected {V: Type} (G: SimpleGraph V) : Prop :=
 def nonEdgeSet {V : Type} (G : SimpleGraph V) :=
   (completeGraph V).edgeSet \ G.edgeSet
 
+/-- Done by elliot. A proof that the nonedgeset of an empty graph is the edgeset of a complete graph. -/
 theorem minusEmptyGraph {V : Type} : nonEdgeSet (emptyGraph V) = (completeGraph V).edgeSet := by
   simp [nonEdgeSet]
 
+/-- Done by elliot. Adds a given edge to a given graph-/
 def addEdgeToGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
 { Adj := fun (x y) => G.Adj x y ∨ (x ∈ e ∧ y ∈ e ∧ x ≠ y),
   symm := by
@@ -70,6 +72,8 @@ def addEdgeToGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :
     exact ⟨andMiddle, andLeft, andRight.symm⟩
 }
 
+/-- A proof that the pathGraph (From the Mathlib.Combinatorics.SimpleGraph.Hasse package only used by elliot)
+is the same as adding an edge to the empty graph on two vertices. -/
 theorem emptyGraphToPathGraphOnTwoVertices : SimpleGraph.pathGraph 2 = addEdgeToGraph (emptyGraph (Fin 2)) (Sym2.mk (0, 1)):= by
   -- x and y are two elements of the set Fin 2 i.e. {0, 1}
   ext x y
@@ -187,6 +191,7 @@ theorem emptyGraphToPathGraphOnTwoVertices : SimpleGraph.pathGraph 2 = addEdgeTo
   -- 1 = 1 so a simple rfl
   rfl
 
+/-- Made by elliot. Removes the edge e from the graph G. -/
 def deleteEdgeFromGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGraph V :=
 { Adj := fun (x y) => G.Adj x y ∧ (x ∉ e ∧ y ∉ e ∧ x ≠ y),
   symm := by
@@ -202,6 +207,7 @@ def deleteEdgeFromGraph {V : Type} (G : SimpleGraph V) (e : Sym2 V) : SimpleGrap
       simp_all only [not_false_eq_true, SimpleGraph.irrefl]
 }
 
+/-- If the graph is acyclic and adding every edge not in G to G breaks acyclicness-/
 def isMaximallyAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
   ¬hasACycle G ∧ (∀ e ∈ nonEdgeSet G, hasACycle (addEdgeToGraph G e))
 
@@ -209,7 +215,10 @@ def isMaximallyAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
 theorem my_card_congr' {α β} (x : Fintype α) (y : Fintype β) (h : α = β) : x.card = y.card := by
   exact Fintype.card_congr' h
 
-/-- An adaptation of Elliots version of this proof that is usable with the standard finiteness concepts and tree defintions used by the rest of the group-/
+/-- An adaptation of Elliots version of this proof that is usable with the standard finiteness
+ concepts and tree defintions used by the rest of the group. It was not completable in time timeframe
+ between us finding out the theorem was incomplete and hand-in, thus is sorried out.
+ As the original is not commented, this is not either.-/
 theorem treeIsMinimallyConnected {V : Type} [Finite V]  {G : SimpleGraph V} (graphIsTree : isTree G) (h_3 : Nonempty G.edgeSet)
                                 : ∀ e ∈ G.edgeSet, G.Connected ∧ ¬(G.deleteEdges (putElemInSet (e))).Connected := by
   intros edge edgeInEdgeSet
@@ -329,7 +338,7 @@ lemma oneVertexbutEdgeIsFalse {V : Type} [Finite V] (G : SimpleGraph V) (e : Sym
 
     simp_all only [gt_iff_lt, lt_self_iff_false] -- h1 & h3 contradict eachother, so we have accquired the desired result
 
--- This section of the project was done by Daniel
+----------------------- This section of the project was done by Daniel
 
 /-- A function taking the set of vertices in a connected component of a graph G and forms a subgraph containing all edges in G between the vertices in the conncected component-/
 def connectedComponentToSubGraph {V : Type} [Finite V] (G : SimpleGraph V) (connComponent : Set V): G.Subgraph :=
@@ -3675,55 +3684,55 @@ theorem five_implies_onetwothreefour {V : Type} [Finite V] (G : SimpleGraph V) (
 
 -- End of Dan Theorems
 
-/-- This proof was originally assigned to a member of the group who accidenatily completed a different proof instead. Due to us finding out about this so 
+/-- This proof was originally assigned to a member of the group who accidenatily completed a different proof instead. Due to us finding out about this so
 close to hand it, I have only had the opportunity to briefly sketch a proof. -/
-theorem three_implies_two {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V} 
+theorem three_implies_two {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V}
   (G_connected : G.Connected) : IsMinimallyConnected G → IsUniquelyConnected G := by
-  
+
   contrapose  -- We use the contrapositive: assume ¬IsUniquelyConnected and show ¬IsMinimallyConnected
   intro not_uniquely_connected
-  unfold IsMinimallyConnected  
+  unfold IsMinimallyConnected
   unfold IsUniquelyConnected at not_uniquely_connected
   unfold isUniquePath at not_uniquely_connected
 
   -- Simplify expressions
   simp_all only [Subtype.forall, not_forall, not_exists,  not_not]
-  
+
   obtain ⟨x, x_props⟩ := not_uniquely_connected  -- Get an example where uniqueness of paths fails
-  obtain ⟨y, x_y_prop⟩ := x_props  
+  obtain ⟨y, x_y_prop⟩ := x_props
 
   have G_precon : G.Preconnected := by
     exact G_connected.1  -- Extract the preconnected component from G's connected property
-  
+
   let x_y_walk_nonempty := G_precon x y -- Establish that there exists a walk between x and y
-  unfold SimpleGraph.Preconnected at G_precon  
-  unfold SimpleGraph.Reachable at G_precon  
-  let x_y_walk_nonempty := G_precon x y  
-  
+  unfold SimpleGraph.Preconnected at G_precon
+  unfold SimpleGraph.Reachable at G_precon
+  let x_y_walk_nonempty := G_precon x y
+
   have exists_walk : ∃ w : G.Walk x y, w ∈ (Set.univ : Set (G.Walk x y)) := by -- Obtain an explicit walk between x and y
-    exact Set.exists_mem_of_nonempty (G.Walk x y)  
-  
-  obtain ⟨w, w_prop⟩ := exists_walk  
+    exact Set.exists_mem_of_nonempty (G.Walk x y)
+
+  obtain ⟨w, w_prop⟩ := exists_walk
 
   have DecEqV : DecidableEq V := by
-    exact Classical.typeDecidableEq V  
+    exact Classical.typeDecidableEq V
 
   let p := w.toPath  -- Convert the walk into a path
   let exists_other_walk := x_y_prop p.1 p.2  -- Extract another distinct path between x and y (since uniqueness fails)
-  obtain ⟨other_p, other_p_property⟩ := exists_other_walk  
-  obtain ⟨other_p_isPath, other_p_neq_p⟩ := other_p_property  
+  obtain ⟨other_p, other_p_property⟩ := exists_other_walk
+  obtain ⟨other_p_isPath, other_p_neq_p⟩ := other_p_property
   -- Reverse the second path to facilitate cycle construction
-  let other_p_reverse := other_p.reverse  
+  let other_p_reverse := other_p.reverse
   have reverse_is_path : other_p_reverse.IsPath := by
-    exact (SimpleGraph.Walk.isPath_reverse_iff other_p).mpr other_p_isPath  
+    exact (SimpleGraph.Walk.isPath_reverse_iff other_p).mpr other_p_isPath
 
   -- Construct a cycle by appending the two different paths
-  let cycle := p.1.append other_p_reverse  
-  
+  let cycle := p.1.append other_p_reverse
+
   have cycle_is_a_cycle : cycle.IsCycle := by
     -- If is not true, p = other_p, a contradiction
     sorry
- 
+
   have x_y_adj : G.Adj x y := by
     -- The point at where the paths meet in cycle give adjacency
     sorry
