@@ -53,7 +53,7 @@ I am pleased with how this project has turned out. The final result of this proo
 
 I have also left a couple of 'sorry' statements in my theorems on what I believe to be relatively minor, but necessary, results that just won't drop out correctly when trying to solve them despite numerous hours spent trying. These 'sorry' statements are strictly my own and nobody else in the group should lose marks for these should you believe the statements deserve to be penalised. 
 
-The github commit history is not entitrely accurate of my contribution to this project. As Elliot and myself worked together during term 1, it was only Elliot who added anything to the github during this time. My work includes the work done with Elliot in setting up definitions and lemmas as well as the proofs of Unique Path -> Minimally Connected, Tree -> Maximally Acyclic, and Maximally Acyclic -> Tree, the three of which should hopefully be accurately listed as sections which I personally have added to the code. (Theorems start on line xxxx of Lean file)
+The github commit history is not entitrely accurate of my contribution to this project. As Elliot and myself worked together during term 1, it was only Elliot who added anything to the github during this time. My work includes the work done with Elliot in setting up definitions and lemmas as well as the proofs of Unique Path -> Minimally Connected, Tree -> Maximally Acyclic, and Maximally Acyclic -> Tree, the three of which should hopefully be accurately listed as sections which I personally have added to the code. (Theorems on lines 5079 through to 5750 of Lean file)
 
 
 **Krishna**
