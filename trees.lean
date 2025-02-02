@@ -209,7 +209,8 @@ def isMaximallyAcyclic {V : Type} (G : SimpleGraph V) : Prop :=
 theorem my_card_congr' {α β} (x : Fintype α) (y : Fintype β) (h : α = β) : x.card = y.card := by
   exact Fintype.card_congr' h
 
-/-- An adaptation of Elliots version of this proof that is usable with the standard finiteness concepts and tree defintions used by the rest of the group-/
+/-- An adaptation of Elliots version of this proof that is usable with the standard finiteness
+ concepts and tree defintions used by the rest of the group. It was not completable in time timeframe between us finding out the theorem was incomplete and hand-in, thus is sorried out.-/
 theorem treeIsMinimallyConnected {V : Type} [Finite V]  {G : SimpleGraph V} (graphIsTree : isTree G) (h_3 : Nonempty G.edgeSet)
                                 : ∀ e ∈ G.edgeSet, G.Connected ∧ ¬(G.deleteEdges (putElemInSet (e))).Connected := by
   intros edge edgeInEdgeSet
@@ -3675,55 +3676,55 @@ theorem five_implies_onetwothreefour {V : Type} [Finite V] (G : SimpleGraph V) (
 
 -- End of Dan Theorems
 
-/-- This proof was originally assigned to a member of the group who accidenatily completed a different proof instead. Due to us finding out about this so 
+/-- This proof was originally assigned to a member of the group who accidenatily completed a different proof instead. Due to us finding out about this so
 close to hand it, I have only had the opportunity to briefly sketch a proof. -/
-theorem three_implies_two {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V} 
+theorem three_implies_two {V : Type} [Finite V] [Nonempty V] {G : SimpleGraph V}
   (G_connected : G.Connected) : IsMinimallyConnected G → IsUniquelyConnected G := by
-  
+
   contrapose  -- We use the contrapositive: assume ¬IsUniquelyConnected and show ¬IsMinimallyConnected
   intro not_uniquely_connected
-  unfold IsMinimallyConnected  
+  unfold IsMinimallyConnected
   unfold IsUniquelyConnected at not_uniquely_connected
   unfold isUniquePath at not_uniquely_connected
 
   -- Simplify expressions
   simp_all only [Subtype.forall, not_forall, not_exists,  not_not]
-  
+
   obtain ⟨x, x_props⟩ := not_uniquely_connected  -- Get an example where uniqueness of paths fails
-  obtain ⟨y, x_y_prop⟩ := x_props  
+  obtain ⟨y, x_y_prop⟩ := x_props
 
   have G_precon : G.Preconnected := by
     exact G_connected.1  -- Extract the preconnected component from G's connected property
-  
+
   let x_y_walk_nonempty := G_precon x y -- Establish that there exists a walk between x and y
-  unfold SimpleGraph.Preconnected at G_precon  
-  unfold SimpleGraph.Reachable at G_precon  
-  let x_y_walk_nonempty := G_precon x y  
-  
+  unfold SimpleGraph.Preconnected at G_precon
+  unfold SimpleGraph.Reachable at G_precon
+  let x_y_walk_nonempty := G_precon x y
+
   have exists_walk : ∃ w : G.Walk x y, w ∈ (Set.univ : Set (G.Walk x y)) := by -- Obtain an explicit walk between x and y
-    exact Set.exists_mem_of_nonempty (G.Walk x y)  
-  
-  obtain ⟨w, w_prop⟩ := exists_walk  
+    exact Set.exists_mem_of_nonempty (G.Walk x y)
+
+  obtain ⟨w, w_prop⟩ := exists_walk
 
   have DecEqV : DecidableEq V := by
-    exact Classical.typeDecidableEq V  
+    exact Classical.typeDecidableEq V
 
   let p := w.toPath  -- Convert the walk into a path
   let exists_other_walk := x_y_prop p.1 p.2  -- Extract another distinct path between x and y (since uniqueness fails)
-  obtain ⟨other_p, other_p_property⟩ := exists_other_walk  
-  obtain ⟨other_p_isPath, other_p_neq_p⟩ := other_p_property  
+  obtain ⟨other_p, other_p_property⟩ := exists_other_walk
+  obtain ⟨other_p_isPath, other_p_neq_p⟩ := other_p_property
   -- Reverse the second path to facilitate cycle construction
-  let other_p_reverse := other_p.reverse  
+  let other_p_reverse := other_p.reverse
   have reverse_is_path : other_p_reverse.IsPath := by
-    exact (SimpleGraph.Walk.isPath_reverse_iff other_p).mpr other_p_isPath  
+    exact (SimpleGraph.Walk.isPath_reverse_iff other_p).mpr other_p_isPath
 
   -- Construct a cycle by appending the two different paths
-  let cycle := p.1.append other_p_reverse  
-  
+  let cycle := p.1.append other_p_reverse
+
   have cycle_is_a_cycle : cycle.IsCycle := by
     -- If is not true, p = other_p, a contradiction
     sorry
- 
+
   have x_y_adj : G.Adj x y := by
     -- The point at where the paths meet in cycle give adjacency
     sorry
