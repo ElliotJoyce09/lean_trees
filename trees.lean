@@ -4928,7 +4928,7 @@ lemma onetwothreefourfive_implies_six {V : Type} [Finite V] (G : SimpleGraph V) 
       have CardinalityCondition : (Fintype.ofFinite G.edgeSet).card = (Fintype.ofFinite V).card - 1 := by
 
         -- by using (5), we know that any tree satisfies the cardinality condition
-        exact onetwothreefour_implies_five G G_is_tree nonempty
+        exact (onetwothreefour_implies_five G G_is_tree nonempty).2
       exact CardinalityCondition
 
 /-- The proof of equivalence between (6) and (1,2,3,4,5)-/
