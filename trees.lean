@@ -3682,7 +3682,7 @@ theorem five_implies_onetwothreefour {V : Type} [Finite V] (G : SimpleGraph V) (
   unfold isTree -- we see this is exactly the defintion of a tree, so are done
   exact G_Acylic_and_Connected
 
--- End of Dan Theorems
+-- End of Daniel Theorems
 
 /-- This proof was originally assigned to a member of the group who accidenatily completed a different proof instead. Due to us finding out about this so
 close to hand it, I have only had the opportunity to briefly sketch a proof. -/
@@ -5854,7 +5854,7 @@ theorem MaximallyAcylicIsTree {V: Type} [Nonempty V] {G : SimpleGraph V} : isMax
 
 -- end of olivia theorems
 
--- Below done by daniel
+-- Below done by daniel 
 
 theorem completeTheorem {V : Type} [Finite V] [nonempty_V : Nonempty V] {G : SimpleGraph V}
   : (isTree G) ∨ (IsUniquelyConnected G) ∨ (IsMinimallyConnected G) ∨ (isMaximallyAcyclic G)
